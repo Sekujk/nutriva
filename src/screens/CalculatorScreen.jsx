@@ -53,7 +53,7 @@ function EditableResultRow({ icon, label, formula, value, unit, override, onChan
         />
         <Text style={styles.resultUnit}>{unit}</Text>
       </View>
-      {override !== null && <Text style={styles.overrideHint}>Editado manualmente — así se usa para lo que depende de este valor.</Text>}
+      {override !== null && <Text style={styles.overrideHint}>Editado manualmente. Así se usa para lo que depende de este valor.</Text>}
     </View>
   );
 }

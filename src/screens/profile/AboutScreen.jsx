@@ -3,62 +3,45 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useTheme } from '../../theme/ThemeContext';
-import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../../theme/typography';
+import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../../theme/typography';
 import SubScreenHeader from './SubScreenHeader';
 import Hoverable from '../../components/Hoverable';
 import HeroBadge from '../../components/HeroBadge';
 
 const GITHUB_URL = 'https://github.com/Sekujk/nutriva';
 
-const FEATURES = [
-  { icon: 'calculator-outline', text: 'Calculadoras clínicas con la fórmula siempre visible' },
-  { icon: 'restaurant-outline', text: 'Tablas de composición de alimentos de Perú y Guatemala' },
-  { icon: 'time-outline', text: 'Historial de casos, como un cuaderno de trabajo' },
-];
-
-const SOURCES = [
-  { country: 'Perú', name: 'INS — Tablas peruanas de composición de alimentos, 10ma ed. (2017)' },
-  { country: 'Guatemala', name: 'INCAP — Tabla de composición de alimentos de Centroamérica, 2da ed. (2012)' },
-];
-
 export default function AboutScreen({ onBack }) {
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const version = Constants.expoConfig?.version || '—';
+  const version = Constants.expoConfig?.version || '0.0.0';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <SubScreenHeader title="Sobre la app" onBack={onBack} />
 
-      <View style={styles.card}>
-        <HeroBadge emoji="🦦" size={60} iconSize={30} />
-        <Text style={styles.version}>Nutriva v{version}</Text>
-        <Text style={styles.body}>
-          Calculadoras clínicas y composición de alimentos para estudiantes de nutrición en Perú y Guatemala.
+      <View style={styles.hero}>
+        <HeroBadge emoji="🦦" size={64} iconSize={32} />
+        <Text style={styles.heroName}>Nutriva</Text>
+        <View style={styles.versionPill}>
+          <Text style={styles.versionPillText}>versión {version}</Text>
+        </View>
+        <Text style={styles.tagline}>
+          Calculadoras clínicas y composición de alimentos para estudiantes de nutrición
         </Text>
       </View>
 
-      <Text style={styles.sectionLabel}>Qué incluye</Text>
-      <View style={styles.card}>
-        {FEATURES.map((f, i) => (
-          <View key={f.icon} style={[styles.featureRow, i > 0 && styles.featureRowDivider]}>
-            <View style={styles.featureIcon}>
-              <Ionicons name={f.icon} size={17} color={colors.primary} />
-            </View>
-            <Text style={styles.featureText}>{f.text}</Text>
-          </View>
-        ))}
-      </View>
-
-      <Text style={styles.sectionLabel}>Fuentes de datos</Text>
-      <View style={styles.card}>
-        {SOURCES.map((s, i) => (
-          <View key={s.country} style={[styles.sourceRow, i > 0 && styles.featureRowDivider]}>
-            <Text style={styles.sourceCountry}>{s.country}</Text>
-            <Text style={styles.sourceName}>{s.name}</Text>
-          </View>
-        ))}
+      <View style={styles.note}>
+        <Text style={styles.noteParagraph}>
+          Nutriva junta en un solo lugar lo que antes vivía repartido entre calculadoras sueltas
+          y PDFs de tablas de alimentos. Cada fórmula queda a la vista, cada resultado se puede
+          ajustar a mano, y cada dato de composición de alimentos viene de una fuente oficial:
+          el <Text style={styles.noteEmphasis}>INS</Text> en Perú y el <Text style={styles.noteEmphasis}>INCAP</Text> en Guatemala.
+        </Text>
+        <Text style={styles.noteParagraph}>
+          La app sigue creciendo poco a poco. Si encuentras un error o quieres proponer algo,
+          el código está abierto en GitHub.
+        </Text>
       </View>
 
       <Hoverable scaleTo={1.01}>
@@ -94,47 +77,42 @@ export default function AboutScreen({ onBack }) {
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1, gap: 12 },
-  card: {
-    alignItems: 'center',
+  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1, gap: 14 },
+
+  hero: { alignItems: 'center', paddingVertical: 12, gap: 8 },
+  heroName: { fontSize: 26, fontFamily: FONT_DISPLAY_BOLD, color: colors.text, marginTop: 6 },
+  versionPill: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  versionPillText: { fontSize: 11.5, fontWeight: '700', color: colors.primary },
+  tagline: {
+    fontSize: 14.5,
+    fontFamily: FONT_DISPLAY_ITALIC,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 4,
+    maxWidth: 320,
+  },
+
+  note: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 24,
-    gap: 10,
+    padding: 22,
+    gap: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 2,
   },
-  version: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text },
-  body: { fontSize: 13, color: colors.textMuted, textAlign: 'center', lineHeight: 18 },
-
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%', paddingVertical: 8 },
-  featureRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
-  featureIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featureText: { flex: 1, fontSize: 13.5, color: colors.text, fontWeight: '600', lineHeight: 19 },
-
-  sourceRow: { width: '100%', paddingVertical: 10, gap: 3 },
-  sourceCountry: { fontSize: 11.5, fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.4 },
-  sourceName: { fontSize: 13, color: colors.textMuted, lineHeight: 18 },
+  noteParagraph: { fontSize: 14, color: colors.text, lineHeight: 22 },
+  noteEmphasis: { fontFamily: FONT_DISPLAY, color: colors.primary },
 
   row: {
     flexDirection: 'row',
