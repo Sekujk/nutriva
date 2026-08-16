@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
+import Hoverable from '../../components/Hoverable';
 
 export default function OnboardingShell({
   icon,
@@ -60,24 +61,28 @@ export default function OnboardingShell({
               <View style={styles.backButtonPlaceholder} />
             )}
 
-            <TouchableOpacity
-              style={[styles.continueButton, continueDisabled && styles.continueButtonDisabled]}
-              onPress={onContinue}
-              disabled={continueDisabled || loading}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={continueLabel}
-              accessibilityState={{ disabled: continueDisabled || loading }}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.background} />
-              ) : (
-                <View style={styles.continueContent}>
-                  <Text style={styles.continueText}>{continueLabel}</Text>
-                  <Ionicons name="arrow-forward" size={18} color={colors.background} style={styles.continueIcon} />
-                </View>
+            <Hoverable scaleTo={continueDisabled ? 1 : 1.02} style={styles.continueWrapper}>
+              {({ hovered }) => (
+                <TouchableOpacity
+                  style={[styles.continueButton, hovered && !continueDisabled && styles.continueButtonHovered, continueDisabled && styles.continueButtonDisabled]}
+                  onPress={onContinue}
+                  disabled={continueDisabled || loading}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={continueLabel}
+                  accessibilityState={{ disabled: continueDisabled || loading }}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={colors.background} />
+                  ) : (
+                    <View style={styles.continueContent}>
+                      <Text style={styles.continueText}>{continueLabel}</Text>
+                      <Ionicons name="arrow-forward" size={18} color={colors.background} style={styles.continueIcon} />
+                    </View>
+                  )}
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
+            </Hoverable>
           </View>
         </View>
       </ScrollView>
@@ -146,8 +151,8 @@ const getStyles = (colors) => StyleSheet.create({
     justifyContent: 'center',
   },
   backButtonPlaceholder: { width: 0 },
+  continueWrapper: { flex: 1 },
   continueButton: {
-    flex: 1,
     backgroundColor: colors.primary,
     borderRadius: 14,
     minHeight: 54,
@@ -159,6 +164,7 @@ const getStyles = (colors) => StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
+  continueButtonHovered: { shadowOpacity: 0.4, shadowRadius: 14 },
   continueButtonDisabled: { opacity: 0.45, shadowOpacity: 0 },
   continueContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   continueText: { color: colors.background, fontSize: 16, fontWeight: '700' },

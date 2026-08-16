@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
 import { useAppAlert } from '../context/AppAlertContext';
+import Hoverable from '../components/Hoverable';
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuth();
@@ -144,37 +145,43 @@ export default function AuthScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleSubmit}
-            disabled={loading}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel={isSignUp ? 'Crear cuenta' : 'Ingresar'}
-            accessibilityState={{ disabled: loading }}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.background} />
-            ) : (
-              <Animated.View style={[styles.buttonContent, { opacity: modeOpacity }]}>
-                <Text style={styles.buttonText}>{isSignUp ? 'Crear cuenta' : 'Ingresar'}</Text>
-                <Ionicons name="arrow-forward" size={18} color={colors.background} style={styles.buttonIcon} />
-              </Animated.View>
+          <Hoverable scaleTo={1.015}>
+            {({ hovered }) => (
+              <TouchableOpacity
+                style={[styles.button, hovered && styles.buttonHovered]}
+                onPress={handleSubmit}
+                disabled={loading}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={isSignUp ? 'Crear cuenta' : 'Ingresar'}
+                accessibilityState={{ disabled: loading }}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.background} />
+                ) : (
+                  <Animated.View style={[styles.buttonContent, { opacity: modeOpacity }]}>
+                    <Text style={styles.buttonText}>{isSignUp ? 'Crear cuenta' : 'Ingresar'}</Text>
+                    <Ionicons name="arrow-forward" size={18} color={colors.background} style={styles.buttonIcon} />
+                  </Animated.View>
+                )}
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
+          </Hoverable>
 
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={() => setIsSignUp((prev) => !prev)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel={isSignUp ? 'Ya tienes cuenta, inicia sesión' : 'No tienes cuenta, regístrate'}
-          >
-            <Animated.Text style={[styles.switchText, { opacity: modeOpacity }]}>
-              {isSignUp ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
-              <Text style={styles.switchTextAccent}>{isSignUp ? 'Inicia sesión' : 'Regístrate'}</Text>
-            </Animated.Text>
-          </TouchableOpacity>
+          <Hoverable scaleTo={1.04}>
+            <TouchableOpacity
+              style={styles.switchButton}
+              onPress={() => setIsSignUp((prev) => !prev)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={isSignUp ? 'Ya tienes cuenta, inicia sesión' : 'No tienes cuenta, regístrate'}
+            >
+              <Animated.Text style={[styles.switchText, { opacity: modeOpacity }]}>
+                {isSignUp ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
+                <Text style={styles.switchTextAccent}>{isSignUp ? 'Inicia sesión' : 'Regístrate'}</Text>
+              </Animated.Text>
+            </TouchableOpacity>
+          </Hoverable>
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -295,6 +302,7 @@ const getStyles = (colors) => StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
+  buttonHovered: { shadowOpacity: 0.4, shadowRadius: 14 },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   buttonText: { color: colors.background, fontSize: 16, fontWeight: '700' },
   buttonIcon: { marginLeft: 8 },
