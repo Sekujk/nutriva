@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -9,6 +10,7 @@ import { useAppAlert } from '../../context/AppAlertContext';
 import { isValidBirthDate, toBirthDateString, formatBirthDate, calculateAge } from '../../utils/birthDate';
 import SubScreenHeader from './SubScreenHeader';
 import Avatar from '../../components/Avatar';
+import { darken } from '../../utils/color';
 import { FONT_DISPLAY } from '../../theme/typography';
 
 export default function ProfileInfoScreen({ onBack }) {
@@ -117,7 +119,14 @@ export default function ProfileInfoScreen({ onBack }) {
           accessibilityRole="button"
           accessibilityLabel="Cambiar foto de perfil"
         >
-          <Avatar uri={avatarUrl} label={(username[0] || email[0] || '?').toUpperCase()} size={76} fontSize={28} borderWidth={3} />
+          <LinearGradient
+            colors={[darken(colors.primary, 0.3), colors.primary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatarRing}
+          >
+            <Avatar uri={avatarUrl} label={(username[0] || email[0] || '?').toUpperCase()} size={76} fontSize={28} />
+          </LinearGradient>
           {uploadingAvatar ? (
             <View style={styles.avatarLoading}>
               <ActivityIndicator color={colors.background} />
@@ -253,13 +262,14 @@ const getStyles = (colors) => StyleSheet.create({
   container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
   headerBlock: { alignItems: 'center', marginBottom: 18 },
   avatarWrapper: {},
+  avatarRing: { width: 82, height: 82, borderRadius: 41, alignItems: 'center', justifyContent: 'center' },
   avatarLoading: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 38,
+    borderRadius: 41,
     backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
