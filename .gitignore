@@ -47,6 +47,13 @@ AGENTS.md
 # notas y capturas internas, no se publican en el repositorio
 docs/
 
+# plantilla local de variables de entorno, no se publica en el repo
+.env.example
+
+# función servidor: se despliega manualmente desde el dashboard de Supabase,
+# no tiene sentido publicar su código en un repo público
+supabase/functions/delete-account/
+
 # builds descargados localmente (van adjuntos al Release, no al repo)
 *.apk
 *.aab
