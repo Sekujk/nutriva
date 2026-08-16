@@ -2,20 +2,20 @@
   "name": "Nutriva",
   "short_name": "Nutriva",
   "description": "Calculadoras clínicas y composición de alimentos para estudiantes de nutrición.",
-  "start_url": "/",
+  "start_url": "/nutriva/",
   "display": "standalone",
   "background_color": "#5c8d72",
   "theme_color": "#5c8d72",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/nutriva/icon.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon.png",
+      "src": "/nutriva/icon.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "maskable"
