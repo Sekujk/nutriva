@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from './AuthContext';
+import { useProfile } from './ProfileContext';
 
 const STORAGE_KEY = 'nutriva:country';
 
 export const COUNTRIES = [
-  { code: 'PE', name: 'Perú', tableSource: 'INS', flag: '🇵🇪' },
-  { code: 'GT', name: 'Guatemala', tableSource: 'INCAP', flag: '🇬🇹' },
+  { code: 'PE', name: 'Perú', tableSource: 'INS' },
+  { code: 'GT', name: 'Guatemala', tableSource: 'INCAP' },
 ];
 
 const CountryContext = createContext();
@@ -20,11 +20,11 @@ export const useCountry = () => {
 };
 
 export const CountryProvider = ({ children }) => {
-  const { session, updateProfile } = useAuth();
+  const { profile, updateProfile } = useProfile();
   const [country, setCountryState] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
-  const remoteCountry = session?.user?.user_metadata?.country;
+  const remoteCountry = profile?.country;
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +43,7 @@ export const CountryProvider = ({ children }) => {
         if (valid) {
           setCountryState(saved);
           // Migra a la cuenta un país que solo vivía en este dispositivo.
-          if (session) {
+          if (profile) {
             updateProfile({ country: saved }).catch(() => {});
           }
         }
@@ -53,12 +53,12 @@ export const CountryProvider = ({ children }) => {
       });
 
     return () => { cancelled = true; };
-  }, [session?.user?.id, remoteCountry]);
+  }, [profile?.id, remoteCountry]);
 
   const setCountry = async (code) => {
     setCountryState(code);
     AsyncStorage.setItem(STORAGE_KEY, code).catch(() => {});
-    if (session) {
+    if (profile) {
       try {
         await updateProfile({ country: code });
       } catch (error) {

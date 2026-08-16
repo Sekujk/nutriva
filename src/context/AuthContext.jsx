@@ -44,34 +44,6 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
-  const updateProfile = async (updates) => {
-    const { error } = await supabase.auth.updateUser({ data: updates });
-    if (error) throw error;
-  };
-
-  const completeOnboarding = async ({ username, birthDate }) => {
-    await updateProfile({ username, birth_date: birthDate, onboarding_complete: true });
-  };
-
-  const uploadAvatar = async (uri, mimeType) => {
-    const userId = session?.user?.id;
-    if (!userId) throw new Error('No hay sesión activa');
-
-    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
-    const path = `${userId}/avatar.${ext}`;
-    const arrayBuffer = await fetch(uri).then((res) => res.arrayBuffer());
-
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, arrayBuffer, { contentType: mimeType || 'image/jpeg', upsert: true });
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-    const avatarUrl = `${data.publicUrl}?t=${Date.now()}`;
-    await updateProfile({ avatar_url: avatarUrl });
-    return avatarUrl;
-  };
-
   const deleteAccount = async () => {
     const { error } = await supabase.functions.invoke('delete-account');
     if (error) throw error;
@@ -80,7 +52,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ session, isLoading, signUp, signIn, signOut, completeOnboarding, updateProfile, uploadAvatar, deleteAccount }}
+      value={{ session, isLoading, signUp, signIn, signOut, deleteAccount }}
     >
       {children}
     </AuthContext.Provider>

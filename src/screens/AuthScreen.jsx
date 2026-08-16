@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
 import { useAppAlert } from '../context/AppAlertContext';
@@ -11,6 +12,13 @@ import Hoverable from '../components/Hoverable';
 import HeroBadge from '../components/HeroBadge';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
 import useResponsive from '../hooks/useResponsive';
+import { darken } from '../utils/color';
+
+const FEATURES = [
+  { icon: 'calculator-outline', text: 'Calculadoras clínicas con la fórmula siempre visible' },
+  { icon: 'restaurant-outline', text: 'Tablas de composición de alimentos de tu país' },
+  { icon: 'time-outline', text: 'Historial de tus casos, como un cuaderno de trabajo' },
+];
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuth();
@@ -73,117 +81,171 @@ export default function AuthScreen() {
     }
   };
 
+  const formFields = (
+    <>
+      <Animated.Text
+        style={[styles.formTitle, { opacity: modeOpacity, transform: [{ translateX: modeTranslateX }] }]}
+      >
+        {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
+      </Animated.Text>
+
+      <View style={styles.fieldWrapper}>
+        <Ionicons name="mail-outline" size={19} color={colors.textMuted} style={styles.fieldIcon} />
+        <TextInput
+          style={[styles.input, styles.inputWithIcon]}
+          placeholder="Email"
+          placeholderTextColor={colors.placeholder}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+          blurOnSubmit={false}
+          accessibilityLabel="Email"
+        />
+      </View>
+
+      <View style={styles.fieldWrapper}>
+        <Ionicons name="lock-closed-outline" size={19} color={colors.textMuted} style={styles.fieldIcon} />
+        <TextInput
+          ref={passwordRef}
+          style={[styles.input, styles.inputWithIcon, styles.passwordInput]}
+          placeholder="Contraseña"
+          placeholderTextColor={colors.placeholder}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          returnKeyType="done"
+          onSubmitEditing={handleSubmit}
+          accessibilityLabel="Contraseña"
+        />
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={() => setShowPassword((prev) => !prev)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        >
+          <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+      </View>
+
+      <Hoverable scaleTo={1.015}>
+        {({ hovered }) => (
+          <TouchableOpacity
+            style={[styles.button, hovered && styles.buttonHovered]}
+            onPress={handleSubmit}
+            disabled={loading}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={isSignUp ? 'Crear cuenta' : 'Ingresar'}
+            accessibilityState={{ disabled: loading }}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.background} />
+            ) : (
+              <Animated.View style={[styles.buttonContent, { opacity: modeOpacity }]}>
+                <Text style={styles.buttonText}>{isSignUp ? 'Crear cuenta' : 'Ingresar'}</Text>
+                <Ionicons name="arrow-forward" size={18} color={colors.background} style={styles.buttonIcon} />
+              </Animated.View>
+            )}
+          </TouchableOpacity>
+        )}
+      </Hoverable>
+
+      <Hoverable scaleTo={1.04}>
+        <TouchableOpacity
+          style={styles.switchButton}
+          onPress={() => setIsSignUp((prev) => !prev)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={isSignUp ? 'Ya tienes cuenta, inicia sesión' : 'No tienes cuenta, regístrate'}
+        >
+          <Animated.Text style={[styles.switchText, { opacity: modeOpacity }]}>
+            {isSignUp ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
+            <Text style={styles.switchTextAccent}>{isSignUp ? 'Inicia sesión' : 'Regístrate'}</Text>
+          </Animated.Text>
+        </TouchableOpacity>
+      </Hoverable>
+    </>
+  );
+
+  if (isDesktop) {
+    return (
+      <View style={styles.desktopRoot}>
+        <View style={styles.desktopBrandPanel}>
+          <LinearGradient
+            colors={[darken(colors.primary, 0.45), colors.primary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[styles.blobLarge, { backgroundColor: colors.background, opacity: 0.06 }]} />
+          <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.08 }]} />
+
+          <Animated.View style={{ transform: [{ scale: badgeScale }], marginBottom: 22 }}>
+            <HeroBadge emoji="🦦" size={64} iconSize={32} />
+          </Animated.View>
+
+          <Text style={styles.desktopEyebrow}>Nutriva</Text>
+          <Text style={styles.desktopHeadline}>
+            Tu compañera de{'\n'}
+            <Text style={styles.desktopHeadlineItalic}>cálculos clínicos</Text>
+          </Text>
+
+          <View style={styles.desktopFeatureList}>
+            {FEATURES.map((f) => (
+              <View style={styles.desktopFeatureRow} key={f.icon}>
+                <View style={styles.desktopFeatureIcon}>
+                  <Ionicons name={f.icon} size={17} color={colors.background} />
+                </View>
+                <Text style={styles.desktopFeatureText}>{f.text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.desktopFormPanel}
+          contentContainerStyle={styles.desktopFormPanelInner}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View style={[styles.desktopFormCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            {formFields}
+          </Animated.View>
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+        <View style={styles.hero}>
           <View style={[styles.blobLarge, { backgroundColor: colors.primarySoft, opacity: 0.5 }]} />
           <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.1 }]} />
 
           <Animated.View style={{ transform: [{ scale: badgeScale }], marginBottom: 14 }}>
-            <HeroBadge emoji="🦦" size={isDesktop ? 56 : 72} iconSize={isDesktop ? 28 : 36} />
+            <HeroBadge emoji="🦦" size={72} iconSize={36} />
           </Animated.View>
 
-          <Text style={[styles.heroTitle, isDesktop && styles.heroTitleDesktop]}>Nutriva</Text>
+          <Text style={styles.heroTitle}>Nutriva</Text>
           <Text style={styles.heroTagline}>
             Cálculos clínicos y composición de alimentos para estudiantes de nutrición
           </Text>
         </View>
 
-        <Animated.View style={[styles.card, isDesktop && styles.cardDesktop, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Animated.Text
-            style={[styles.formTitle, { opacity: modeOpacity, transform: [{ translateX: modeTranslateX }] }]}
-          >
-            {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
-          </Animated.Text>
-
-          <View style={styles.fieldWrapper}>
-            <Ionicons name="mail-outline" size={19} color={colors.textMuted} style={styles.fieldIcon} />
-            <TextInput
-              style={[styles.input, styles.inputWithIcon]}
-              placeholder="Email"
-              placeholderTextColor={colors.placeholder}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              textContentType="emailAddress"
-              returnKeyType="next"
-              onSubmitEditing={() => passwordRef.current?.focus()}
-              blurOnSubmit={false}
-              accessibilityLabel="Email"
-            />
-          </View>
-
-          <View style={styles.fieldWrapper}>
-            <Ionicons name="lock-closed-outline" size={19} color={colors.textMuted} style={styles.fieldIcon} />
-            <TextInput
-              ref={passwordRef}
-              style={[styles.input, styles.inputWithIcon, styles.passwordInput]}
-              placeholder="Contraseña"
-              placeholderTextColor={colors.placeholder}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
-              accessibilityLabel="Contraseña"
-            />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setShowPassword((prev) => !prev)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-            >
-              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-
-          <Hoverable scaleTo={1.015}>
-            {({ hovered }) => (
-              <TouchableOpacity
-                style={[styles.button, hovered && styles.buttonHovered]}
-                onPress={handleSubmit}
-                disabled={loading}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={isSignUp ? 'Crear cuenta' : 'Ingresar'}
-                accessibilityState={{ disabled: loading }}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.background} />
-                ) : (
-                  <Animated.View style={[styles.buttonContent, { opacity: modeOpacity }]}>
-                    <Text style={styles.buttonText}>{isSignUp ? 'Crear cuenta' : 'Ingresar'}</Text>
-                    <Ionicons name="arrow-forward" size={18} color={colors.background} style={styles.buttonIcon} />
-                  </Animated.View>
-                )}
-              </TouchableOpacity>
-            )}
-          </Hoverable>
-
-          <Hoverable scaleTo={1.04}>
-            <TouchableOpacity
-              style={styles.switchButton}
-              onPress={() => setIsSignUp((prev) => !prev)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={isSignUp ? 'Ya tienes cuenta, inicia sesión' : 'No tienes cuenta, regístrate'}
-            >
-              <Animated.Text style={[styles.switchText, { opacity: modeOpacity }]}>
-                {isSignUp ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
-                <Text style={styles.switchTextAccent}>{isSignUp ? 'Inicia sesión' : 'Regístrate'}</Text>
-              </Animated.Text>
-            </TouchableOpacity>
-          </Hoverable>
+        <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          {formFields}
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -193,12 +255,6 @@ export default function AuthScreen() {
 const getStyles = (colors) => StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1 },
-  scrollContentDesktop: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    backgroundColor: colors.surfaceMuted,
-  },
 
   hero: {
     backgroundColor: colors.primary,
@@ -207,13 +263,6 @@ const getStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
     overflow: 'hidden',
-  },
-  heroDesktop: {
-    width: 440,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 40,
-    paddingBottom: 32,
   },
   blobLarge: {
     position: 'absolute',
@@ -238,7 +287,6 @@ const getStyles = (colors) => StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: 8,
   },
-  heroTitleDesktop: { fontSize: 28 },
   heroTagline: {
     fontSize: 14.5,
     lineHeight: 21,
@@ -259,19 +307,48 @@ const getStyles = (colors) => StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 32,
   },
-  cardDesktop: {
+
+  // Escritorio: panel de marca + panel de formulario lado a lado.
+  desktopRoot: { flex: 1, flexDirection: 'row', backgroundColor: colors.background },
+  desktopBrandPanel: {
     width: 440,
-    flexGrow: 0,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    paddingHorizontal: 32,
-    paddingBottom: 36,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 24 },
-    shadowOpacity: 0.16,
-    shadowRadius: 48,
-    elevation: 12,
+    padding: 48,
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
+  desktopEyebrow: {
+    fontSize: 13,
+    fontFamily: FONT_DISPLAY,
+    color: colors.background,
+    opacity: 0.75,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 14,
+  },
+  desktopHeadline: {
+    fontSize: 36,
+    fontFamily: FONT_DISPLAY_BOLD,
+    color: colors.background,
+    lineHeight: 42,
+    letterSpacing: -0.4,
+    marginBottom: 36,
+  },
+  desktopHeadlineItalic: { fontFamily: FONT_DISPLAY_ITALIC, fontWeight: 'normal' },
+  desktopFeatureList: { gap: 18 },
+  desktopFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  desktopFeatureIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  desktopFeatureText: { flex: 1, fontSize: 14, color: colors.background, opacity: 0.92, lineHeight: 20, fontWeight: '600' },
+
+  desktopFormPanel: { flex: 1 },
+  desktopFormPanelInner: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 48 },
+  desktopFormCard: { width: '100%', maxWidth: 380 },
 
   formTitle: {
     fontSize: 27,

@@ -6,6 +6,7 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ProfileProvider, useProfile } from './src/context/ProfileContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { CountryProvider } from './src/context/CountryContext';
 import { AppAlertProvider } from './src/context/AppAlertContext';
@@ -211,6 +212,7 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
 
 function MainApp() {
   const { session } = useAuth();
+  const { profile } = useProfile();
   const { colors } = useTheme();
   const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -220,8 +222,8 @@ function MainApp() {
   const ActiveComponent = activeTabInfo.Component;
 
   const email = session?.user?.email || '';
-  const username = session?.user?.user_metadata?.username || '';
-  const avatarUrl = session?.user?.user_metadata?.avatar_url || null;
+  const username = profile?.username || '';
+  const avatarUrl = profile?.avatar_url || null;
 
   useEffect(() => {
     const onBackPress = () => {
@@ -242,6 +244,7 @@ function MainApp() {
 
 function Root() {
   const { session, isLoading } = useAuth();
+  const { profile } = useProfile();
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const fontsLoaded = useAppFonts();
@@ -258,7 +261,7 @@ function Root() {
     return <AuthScreen />;
   }
 
-  const needsOnboarding = session.user?.user_metadata?.onboarding_complete !== true;
+  const needsOnboarding = profile?.onboarding_complete !== true;
   return needsOnboarding ? <OnboardingFlow /> : <MainApp />;
 }
 
@@ -270,14 +273,16 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <ThemeProvider>
-          <AppAlertProvider>
-            <CountryProvider>
-              <ThemedStatusBar />
-              <Root />
-            </CountryProvider>
-          </AppAlertProvider>
-        </ThemeProvider>
+        <ProfileProvider>
+          <ThemeProvider>
+            <AppAlertProvider>
+              <CountryProvider>
+                <ThemedStatusBar />
+                <Root />
+              </CountryProvider>
+            </AppAlertProvider>
+          </ThemeProvider>
+        </ProfileProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

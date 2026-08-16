@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Activi
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import { isValidBirthDate, toBirthDateString, formatBirthDate, calculateAge } from '../../utils/birthDate';
@@ -11,15 +12,16 @@ import Avatar from '../../components/Avatar';
 import { FONT_DISPLAY } from '../../theme/typography';
 
 export default function ProfileInfoScreen({ onBack }) {
-  const { session, updateProfile, uploadAvatar } = useAuth();
+  const { session } = useAuth();
+  const { profile, updateProfile, uploadAvatar } = useProfile();
   const { colors } = useTheme();
   const { notify } = useAppAlert();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const email = session?.user?.email || '';
-  const username = session?.user?.user_metadata?.username || '';
-  const avatarUrl = session?.user?.user_metadata?.avatar_url || null;
-  const birthDate = session?.user?.user_metadata?.birth_date || '';
+  const username = profile?.username || '';
+  const avatarUrl = profile?.avatar_url || null;
+  const birthDate = profile?.birth_date || '';
   const age = calculateAge(birthDate);
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);

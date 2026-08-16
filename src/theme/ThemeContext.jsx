@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { buildColors, PALETTES, DEFAULT_PALETTE } from './colors';
-import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../context/ProfileContext';
 
 const MODE_STORAGE_KEY = 'nutriva:theme-mode';
 const PALETTE_STORAGE_KEY = 'nutriva:theme-palette';
@@ -20,14 +20,14 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const { session, updateProfile } = useAuth();
+  const { profile, updateProfile } = useProfile();
   const systemScheme = useColorScheme();
   const [mode, setMode] = useState('system');
   const [palette, setPalette] = useState(DEFAULT_PALETTE);
   const [loaded, setLoaded] = useState(false);
 
-  const remoteMode = session?.user?.user_metadata?.theme_mode;
-  const remotePalette = session?.user?.user_metadata?.theme_palette;
+  const remoteMode = profile?.theme_mode;
+  const remotePalette = profile?.theme_palette;
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +59,7 @@ export const ThemeProvider = ({ children }) => {
         if (validPalette) setPalette(savedPalette);
 
         // Migra a la cuenta una preferencia que solo vivía en este dispositivo.
-        if (session && (validMode || validPalette)) {
+        if (profile && (validMode || validPalette)) {
           const updates = {};
           if (validMode) updates.theme_mode = savedMode;
           if (validPalette) updates.theme_palette = savedPalette;
@@ -71,12 +71,12 @@ export const ThemeProvider = ({ children }) => {
       });
 
     return () => { cancelled = true; };
-  }, [session?.user?.id, remoteMode, remotePalette]);
+  }, [profile?.id, remoteMode, remotePalette]);
 
   const setThemeMode = async (newMode) => {
     setMode(newMode);
     AsyncStorage.setItem(MODE_STORAGE_KEY, newMode).catch(() => {});
-    if (session) {
+    if (profile) {
       try {
         await updateProfile({ theme_mode: newMode });
       } catch (error) {
@@ -88,7 +88,7 @@ export const ThemeProvider = ({ children }) => {
   const setThemePalette = async (newPalette) => {
     setPalette(newPalette);
     AsyncStorage.setItem(PALETTE_STORAGE_KEY, newPalette).catch(() => {});
-    if (session) {
+    if (profile) {
       try {
         await updateProfile({ theme_palette: newPalette });
       } catch (error) {

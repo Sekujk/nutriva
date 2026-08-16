@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../theme/ThemeContext';
 import Hoverable from '../components/Hoverable';
 import useResponsive from '../hooks/useResponsive';
@@ -95,12 +95,12 @@ function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle }) {
 }
 
 export default function HomeScreen({ onNavigate }) {
-  const { session } = useAuth();
+  const { profile } = useProfile();
   const { colors } = useTheme();
   const { isTablet } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const username = session?.user?.user_metadata?.username;
+  const username = profile?.username;
   const hourGreeting = useMemo(() => greetingForHour(new Date().getHours()), []);
 
   return (
