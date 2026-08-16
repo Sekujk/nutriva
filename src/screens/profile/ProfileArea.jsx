@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, BackHandler, StyleSheet } from 'react-native';
+import { Animated, BackHandler, StyleSheet, View } from 'react-native';
 import ProfileMenuScreen from './ProfileMenuScreen';
 import ProfileInfoScreen from './ProfileInfoScreen';
 import SettingsScreen from './SettingsScreen';
 import AppearanceScreen from './AppearanceScreen';
 import FaqScreen from './FaqScreen';
 import AboutScreen from './AboutScreen';
+import useResponsive from '../../hooks/useResponsive';
 
 const SUB_SCREENS = {
   perfil: ProfileInfoScreen,
@@ -17,6 +18,7 @@ const SUB_SCREENS = {
 
 export default function ProfileArea() {
   const [subScreen, setSubScreen] = useState(null);
+  const { isDesktop } = useResponsive();
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -51,11 +53,15 @@ export default function ProfileArea() {
 
   return (
     <Animated.View style={[styles.flex, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}>
-      {SubScreen ? <SubScreen onBack={() => setSubScreen(null)} /> : <ProfileMenuScreen onNavigate={setSubScreen} />}
+      <View style={[styles.inner, isDesktop && styles.innerDesktop]}>
+        {SubScreen ? <SubScreen onBack={() => setSubScreen(null)} /> : <ProfileMenuScreen onNavigate={setSubScreen} />}
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  inner: { flex: 1 },
+  innerDesktop: { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center' },
 });

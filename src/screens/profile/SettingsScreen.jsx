@@ -1,40 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
+import React, { useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useCountry } from '../../context/CountryContext';
-import { useAppAlert } from '../../context/AppAlertContext';
 import SubScreenHeader from './SubScreenHeader';
 import CountryFlag from '../../components/CountryFlag';
 
 export default function SettingsScreen({ onBack }) {
-  const { signOut, deleteAccount } = useAuth();
   const { colors } = useTheme();
   const { country, setCountry, countries } = useCountry();
-  const { notify, confirm } = useAppAlert();
   const styles = useMemo(() => getStyles(colors), [colors]);
-
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDeleteAccount = () => {
-    confirm({
-      title: 'Eliminar cuenta',
-      message: 'Esta acción es permanente y no se puede deshacer. Se eliminará tu cuenta y todos tus datos de Nutriva para siempre.',
-      confirmText: 'Eliminar para siempre',
-      cancelText: 'Cancelar',
-      destructive: true,
-      onConfirm: async () => {
-        setDeleting(true);
-        try {
-          await deleteAccount();
-        } catch (error) {
-          notify({ title: 'No se pudo eliminar la cuenta', message: error.message || 'Intenta de nuevo más tarde.', variant: 'error' });
-          setDeleting(false);
-        }
-      },
-    });
-  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -61,33 +35,6 @@ export default function SettingsScreen({ onBack }) {
           })}
         </View>
         <Text style={styles.hint}>Define qué tabla de composición de alimentos vas a usar.</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Cuenta</Text>
-        <TouchableOpacity
-          style={styles.signOutButton}
-          onPress={signOut}
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar sesión"
-        >
-          <Ionicons name="log-out-outline" size={18} color={colors.danger} />
-          <Text style={styles.signOutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={handleDeleteAccount}
-          disabled={deleting}
-          accessibilityRole="button"
-          accessibilityLabel="Eliminar cuenta"
-        >
-          {deleting ? (
-            <ActivityIndicator size="small" color={colors.danger} />
-          ) : (
-            <Text style={styles.deleteText}>Eliminar cuenta</Text>
-          )}
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -127,18 +74,4 @@ const getStyles = (colors) => StyleSheet.create({
   segmentText: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
   segmentTextActive: { color: colors.background },
   hint: { fontSize: 12, color: colors.textMuted, marginTop: 8, lineHeight: 16 },
-
-  signOutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    minHeight: 48,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    backgroundColor: colors.dangerSoft,
-  },
-  signOutText: { color: colors.danger, fontSize: 15, fontWeight: '700' },
-  deleteButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
-  deleteText: { color: colors.textFaint, fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
 });
