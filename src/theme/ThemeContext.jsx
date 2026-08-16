@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { lightColors, darkColors } from './colors';
+import { buildColors, PALETTES, DEFAULT_PALETTE } from './colors';
 
-const STORAGE_KEY = 'nutriva:theme-mode';
+const MODE_STORAGE_KEY = 'nutriva:theme-mode';
+const PALETTE_STORAGE_KEY = 'nutriva:theme-palette';
 
 const ThemeContext = createContext();
 
@@ -18,13 +19,20 @@ export const useTheme = () => {
 export const ThemeProvider = ({ children }) => {
   const systemScheme = useColorScheme();
   const [mode, setMode] = useState('system');
+  const [palette, setPalette] = useState(DEFAULT_PALETTE);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((saved) => {
-        if (saved === 'light' || saved === 'dark' || saved === 'system') {
-          setMode(saved);
+    Promise.all([
+      AsyncStorage.getItem(MODE_STORAGE_KEY),
+      AsyncStorage.getItem(PALETTE_STORAGE_KEY),
+    ])
+      .then(([savedMode, savedPalette]) => {
+        if (savedMode === 'light' || savedMode === 'dark' || savedMode === 'system') {
+          setMode(savedMode);
+        }
+        if (savedPalette && PALETTES[savedPalette]) {
+          setPalette(savedPalette);
         }
       })
       .finally(() => setLoaded(true));
@@ -33,21 +41,32 @@ export const ThemeProvider = ({ children }) => {
   const setThemeMode = async (newMode) => {
     setMode(newMode);
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, newMode);
+      await AsyncStorage.setItem(MODE_STORAGE_KEY, newMode);
     } catch (error) {
       console.error('No se pudo guardar la preferencia de tema:', error);
     }
   };
 
+  const setThemePalette = async (newPalette) => {
+    setPalette(newPalette);
+    try {
+      await AsyncStorage.setItem(PALETTE_STORAGE_KEY, newPalette);
+    } catch (error) {
+      console.error('No se pudo guardar la paleta de color:', error);
+    }
+  };
+
   const resolvedScheme = mode === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : mode;
-  const colors = resolvedScheme === 'dark' ? darkColors : lightColors;
+  const colors = buildColors(resolvedScheme, palette);
 
   if (!loaded) {
     return null;
   }
 
   return (
-    <ThemeContext.Provider value={{ mode, setThemeMode, resolvedScheme, colors }}>
+    <ThemeContext.Provider
+      value={{ mode, setThemeMode, palette, setThemePalette, palettes: PALETTES, resolvedScheme, colors }}
+    >
       {children}
     </ThemeContext.Provider>
   );

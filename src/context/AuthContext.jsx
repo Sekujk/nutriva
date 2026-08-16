@@ -44,8 +44,25 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  const updateProfile = async (updates) => {
+    const { error } = await supabase.auth.updateUser({ data: updates });
+    if (error) throw error;
+  };
+
+  const completeOnboarding = async ({ username, birthDate }) => {
+    await updateProfile({ username, birth_date: birthDate, onboarding_complete: true });
+  };
+
+  const deleteAccount = async () => {
+    const { error } = await supabase.functions.invoke('delete-account');
+    if (error) throw error;
+    await supabase.auth.signOut();
+  };
+
   return (
-    <AuthContext.Provider value={{ session, isLoading, signUp, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ session, isLoading, signUp, signIn, signOut, completeOnboarding, updateProfile, deleteAccount }}
+    >
       {children}
     </AuthContext.Provider>
   );

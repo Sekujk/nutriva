@@ -4,8 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const STORAGE_KEY = 'nutriva:country';
 
 export const COUNTRIES = [
-  { code: 'PE', name: 'Perú', tableSource: 'INS' },
-  { code: 'GT', name: 'Guatemala', tableSource: 'INCAP' },
+  { code: 'PE', name: 'Perú', tableSource: 'INS', flag: '🇵🇪' },
+  { code: 'GT', name: 'Guatemala', tableSource: 'INCAP', flag: '🇬🇹' },
 ];
 
 const CountryContext = createContext();

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 
 const ACTIVITY_FACTORS = [
@@ -108,22 +109,43 @@ export default function CalculatorScreen() {
       <Text style={styles.sectionTitle}>Resultado</Text>
       {hasInputs ? (
         <View style={styles.resultCard}>
-          <Text style={styles.resultLabel}>TMB (Mifflin-St Jeor)</Text>
-          <Text style={styles.formula}>
-            {sex === 'M'
-              ? `10×${w} + 6.25×${h} − 5×${a} + 5`
-              : `10×${w} + 6.25×${h} − 5×${a} − 161`}
-          </Text>
-          <Text style={styles.resultValue}>{tmb.toFixed(0)} kcal/día</Text>
+          <View style={styles.resultRow}>
+            <View style={styles.resultIcon}>
+              <Ionicons name="flame" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.resultTextCol}>
+              <Text style={styles.resultLabel}>TMB (Mifflin-St Jeor)</Text>
+              <Text style={styles.formula}>
+                {sex === 'M'
+                  ? `10×${w} + 6.25×${h} − 5×${a} + 5`
+                  : `10×${w} + 6.25×${h} − 5×${a} − 161`}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.resultValuePill}>
+            <Text style={styles.resultValue}>{tmb.toFixed(0)} kcal/día</Text>
+          </View>
 
           <View style={styles.divider} />
 
-          <Text style={styles.resultLabel}>GET (Gasto Energético Total)</Text>
-          <Text style={styles.formula}>TMB × {activity.value} ({activity.label})</Text>
-          <Text style={styles.resultValue}>{get.toFixed(0)} kcal/día</Text>
+          <View style={styles.resultRow}>
+            <View style={styles.resultIcon}>
+              <Ionicons name="flash" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.resultTextCol}>
+              <Text style={styles.resultLabel}>GET (Gasto Energético Total)</Text>
+              <Text style={styles.formula}>TMB × {activity.value} ({activity.label})</Text>
+            </View>
+          </View>
+          <View style={styles.resultValuePill}>
+            <Text style={styles.resultValue}>{get.toFixed(0)} kcal/día</Text>
+          </View>
         </View>
       ) : (
-        <Text style={styles.empty}>Completa peso, talla y edad para ver el cálculo.</Text>
+        <View style={styles.emptyCard}>
+          <Ionicons name="calculator-outline" size={28} color={colors.textFaint} />
+          <Text style={styles.empty}>Completa peso, talla y edad para ver el cálculo.</Text>
+        </View>
       )}
     </ScrollView>
   );
@@ -140,33 +162,41 @@ const getStyles = (colors) => StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
   },
-  sexRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  sexRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
   sexButton: {
     flex: 1,
-    minHeight: 44,
-    borderRadius: 8,
+    minHeight: 48,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sexButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  sexButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   sexButtonText: { fontSize: 14, fontWeight: '600', color: colors.text },
   sexButtonTextActive: { color: colors.background },
-  inputRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  inputRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
   inputCol: { flex: 1 },
   label: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: colors.borderStrong,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
     fontSize: 16,
     minHeight: 48,
     color: colors.text,
     backgroundColor: colors.surface,
   },
-  activityWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  activityWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   activityChip: {
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -179,14 +209,43 @@ const getStyles = (colors) => StyleSheet.create({
   activityChipTextActive: { color: colors.primary },
   resultCard: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 18,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 3,
   },
+  resultRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  resultIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultTextCol: { flex: 1 },
   resultLabel: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
-  formula: { fontSize: 13, color: colors.textFaint, marginTop: 4, fontStyle: 'italic' },
-  resultValue: { fontSize: 24, fontWeight: '700', color: colors.primary, marginTop: 6 },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: 16 },
-  empty: { textAlign: 'center', color: colors.textMuted, marginTop: 16, fontSize: 13 },
+  formula: { fontSize: 13, color: colors.textFaint, marginTop: 2, fontStyle: 'italic' },
+  resultValuePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primarySoft,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginTop: 10,
+    marginLeft: 48,
+  },
+  resultValue: { fontSize: 22, fontWeight: '800', color: colors.primary },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: 18 },
+  emptyCard: {
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 28,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceMuted,
+  },
+  empty: { textAlign: 'center', color: colors.textMuted, fontSize: 13, paddingHorizontal: 24 },
 });
