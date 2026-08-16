@@ -26,7 +26,7 @@ const GROUP_ICONS = {
 };
 
 function fmt(n) {
-  return Number.isFinite(n) ? (Number.isInteger(n) ? n : n.toFixed(1)) : '—';
+  return Number.isFinite(n) ? (Number.isInteger(n) ? n : n.toFixed(1)) : 'N/D';
 }
 
 function FoodCard({ food, index, colors, styles, gridStyle }) {

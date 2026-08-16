@@ -57,6 +57,10 @@ docs/
 # no tiene sentido publicar su código en un repo público
 supabase/functions/delete-account/
 
+# migraciones de base de datos: revelan el esquema completo de la app,
+# se aplican manualmente con supabase db push, no se publican
+supabase/migrations/
+
 # scripts de despliegue/operación local, no forman parte de la app
 scripts/
 

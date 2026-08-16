@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     q: '¿Puedo editar el resultado de la Calculadora?',
-    a: 'Sí. Toca el número de TMB o GET para escribirlo manualmente — útil si ya tienes un valor calculado por otro método. Toca "Restaurar" para volver al cálculo automático.',
+    a: 'Sí. Toca el número de TMB o GET para escribirlo manualmente, útil si ya tienes un valor calculado por otro método. Toca "Restaurar" para volver al cálculo automático.',
   },
   {
     q: '¿Dónde quedan mis casos guardados?',
@@ -32,7 +32,7 @@ const FAQS = [
   },
   {
     q: '¿Mis datos son privados?',
-    a: 'Sí. Cada cuenta solo puede ver y modificar su propia información — perfil, historial y foto son privados a tu usuario.',
+    a: 'Sí. Cada cuenta solo puede ver y modificar su propia información: perfil, historial y foto son privados a tu usuario.',
   },
   {
     q: '¿Qué pasa si elimino mi cuenta?',
@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     q: '¿Van a agregar más países?',
-    a: 'Es la idea, pero cada país necesita una tabla de composición de alimentos oficial y confiable como fuente — se irán agregando según se consigan esas fuentes.',
+    a: 'Es la idea, pero cada país necesita una tabla de composición de alimentos oficial y confiable como fuente. Se irán agregando según se consigan esas fuentes.',
   },
 ];
 
