@@ -269,16 +269,16 @@ function ThemedStatusBar() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <AppAlertProvider>
-          <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppAlertProvider>
             <CountryProvider>
               <ThemedStatusBar />
               <Root />
             </CountryProvider>
-          </AuthProvider>
-        </AppAlertProvider>
-      </ThemeProvider>
+          </AppAlertProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

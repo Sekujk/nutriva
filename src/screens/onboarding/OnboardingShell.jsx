@@ -8,6 +8,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import Hoverable from '../../components/Hoverable';
 import HeroBadge from '../../components/HeroBadge';
 import { FONT_DISPLAY } from '../../theme/typography';
+import useResponsive from '../../hooks/useResponsive';
 
 export default function OnboardingShell({
   icon,
@@ -23,19 +24,24 @@ export default function OnboardingShell({
   loading = false,
 }) {
   const { colors } = useTheme();
+  const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" bounces={false}>
-        <View style={styles.hero}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
           <View style={[styles.blobLarge, { backgroundColor: colors.primarySoft, opacity: 0.5 }]} />
           <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.1 }]} />
 
           <View style={{ marginBottom: 14 }}>
-            <HeroBadge icon={icon} size={60} iconSize={26} />
+            <HeroBadge icon={icon} size={isDesktop ? 50 : 60} iconSize={isDesktop ? 22 : 26} />
           </View>
-          <Text style={styles.heroTitle}>{title}</Text>
+          <Text style={[styles.heroTitle, isDesktop && styles.heroTitleDesktop]}>{title}</Text>
           {!!subtitle && <Text style={styles.heroSubtitle}>{subtitle}</Text>}
 
           <View style={styles.dots}>
@@ -45,7 +51,7 @@ export default function OnboardingShell({
           </View>
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, isDesktop && styles.cardDesktop]}>
           {children}
 
           <View style={styles.footer}>
@@ -95,6 +101,12 @@ export default function OnboardingShell({
 const getStyles = (colors) => StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1 },
+  scrollContentDesktop: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    backgroundColor: colors.surfaceMuted,
+  },
 
   hero: {
     backgroundColor: colors.primary,
@@ -104,9 +116,17 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
+  heroDesktop: {
+    width: 460,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 36,
+    paddingBottom: 28,
+  },
   blobLarge: { position: 'absolute', width: 200, height: 200, borderRadius: 100, top: -85, right: -55 },
   blobSmall: { position: 'absolute', width: 130, height: 130, borderRadius: 65, bottom: -55, left: -35 },
   heroTitle: { fontSize: 27, fontFamily: FONT_DISPLAY, color: colors.background, letterSpacing: -0.2, textAlign: 'center' },
+  heroTitleDesktop: { fontSize: 23 },
   heroSubtitle: {
     fontSize: 14,
     lineHeight: 20,
@@ -129,6 +149,19 @@ const getStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 28,
     paddingBottom: 24,
+  },
+  cardDesktop: {
+    width: 460,
+    flexGrow: 0,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingHorizontal: 32,
+    paddingBottom: 32,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.16,
+    shadowRadius: 48,
+    elevation: 12,
   },
 
   footer: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24 },
