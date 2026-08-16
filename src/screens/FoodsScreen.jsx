@@ -13,7 +13,9 @@ export default function FoodsScreen() {
 
   return (
     <View style={styles.container}>
-      <Ionicons name="restaurant-outline" size={40} color={colors.textFaint} />
+      <View style={styles.iconBadge}>
+        <Ionicons name="restaurant-outline" size={30} color={colors.primary} />
+      </View>
       <Text style={styles.title}>Tabla de composición de alimentos</Text>
       <Text style={styles.body}>
         {countryInfo
@@ -25,7 +27,16 @@ export default function FoodsScreen() {
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12, backgroundColor: colors.background },
-  title: { fontSize: 17, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14, backgroundColor: colors.background },
+  iconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  title: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center' },
   body: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
 });
