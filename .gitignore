@@ -28,6 +28,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# Supabase CLI
+supabase/.temp/
+
 # local env files
 .env
 .env*.local
