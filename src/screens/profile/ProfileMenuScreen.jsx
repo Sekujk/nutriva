@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import Hoverable from '../../components/Hoverable';
+import { FONT_DISPLAY } from '../../theme/typography';
 
 const MENU_MONTHS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -142,7 +143,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   avatarInitial: { fontSize: 22, fontWeight: '800', color: colors.primary },
   headerTextCol: { flex: 1 },
-  username: { fontSize: 16, fontWeight: '800', color: colors.text },
+  username: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text },
   email: { fontSize: 12.5, color: colors.textMuted, marginTop: 1 },
   memberSince: { fontSize: 11, color: colors.textFaint, marginTop: 3, fontWeight: '600' },
 

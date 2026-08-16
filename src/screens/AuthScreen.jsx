@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
 import { useAppAlert } from '../context/AppAlertContext';
 import Hoverable from '../components/Hoverable';
+import HeroBadge from '../components/HeroBadge';
+import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuth();
@@ -83,10 +85,8 @@ export default function AuthScreen() {
           <View style={[styles.blobLarge, { backgroundColor: colors.primarySoft, opacity: 0.5 }]} />
           <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.1 }]} />
 
-          <Animated.View style={{ transform: [{ scale: badgeScale }] }}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeEmoji}>🦦</Text>
-            </View>
+          <Animated.View style={{ transform: [{ scale: badgeScale }], marginBottom: 14 }}>
+            <HeroBadge emoji="🦦" size={72} iconSize={36} />
           </Animated.View>
 
           <Text style={styles.heroTitle}>Nutriva</Text>
@@ -216,30 +216,19 @@ const getStyles = (colors) => StyleSheet.create({
     bottom: -50,
     left: -40,
   },
-  badge: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    borderWidth: 3,
-    borderColor: colors.primary,
-  },
-  badgeEmoji: { fontSize: 36, lineHeight: 40 },
   heroTitle: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 34,
+    fontFamily: FONT_DISPLAY_BOLD,
     color: colors.background,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
     marginBottom: 8,
   },
   heroTagline: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 14.5,
+    lineHeight: 21,
+    fontFamily: FONT_DISPLAY_ITALIC,
     color: colors.background,
-    opacity: 0.88,
+    opacity: 0.92,
     textAlign: 'center',
     maxWidth: 300,
   },
@@ -256,10 +245,10 @@ const getStyles = (colors) => StyleSheet.create({
   },
 
   formTitle: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontSize: 27,
+    fontFamily: FONT_DISPLAY,
     color: colors.text,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     marginBottom: 22,
   },
 

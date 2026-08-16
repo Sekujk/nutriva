@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
+import { FONT_DISPLAY } from '../../theme/typography';
 
 export default function SubScreenHeader({ title, onBack }) {
   const { colors } = useTheme();
@@ -33,5 +34,5 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 19, fontWeight: '800', color: colors.text },
+  title: { fontSize: 20, fontFamily: FONT_DISPLAY, color: colors.text },
 });
