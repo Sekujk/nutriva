@@ -5,6 +5,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppAlert } from '../context/AppAlertContext';
 import { supabase } from '../config/supabase';
+import useResponsive from '../hooks/useResponsive';
 
 const ACTIVITY_FACTORS = [
   { key: 'sedentario', label: 'Sedentario', value: 1.2 },
@@ -61,6 +62,7 @@ export default function CalculatorScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const { notify } = useAppAlert();
+  const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [sex, setSex] = useState('F');
@@ -109,8 +111,8 @@ export default function CalculatorScreen() {
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
+  const formContent = (
+    <>
       <Text style={styles.sectionTitle}>Datos</Text>
 
       <View style={styles.sexRow}>
@@ -184,7 +186,11 @@ export default function CalculatorScreen() {
           </TouchableOpacity>
         ))}
       </View>
+    </>
+  );
 
+  const resultContent = (
+    <>
       <View style={styles.sectionTitleRow}>
         <Text style={styles.sectionTitle}>Resultado</Text>
         <View style={styles.editableBadge}>
@@ -245,12 +251,34 @@ export default function CalculatorScreen() {
           <Text style={styles.empty}>Completa peso, talla y edad para ver el cálculo.</Text>
         </View>
       )}
+    </>
+  );
+
+  if (isDesktop) {
+    return (
+      <ScrollView contentContainerStyle={styles.desktopContainer}>
+        <View style={styles.desktopRow}>
+          <View style={styles.desktopCol}>{formContent}</View>
+          <View style={[styles.desktopCol, styles.desktopResultCol]}>{resultContent}</View>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      {formContent}
+      {resultContent}
     </ScrollView>
   );
 }
 
 const getStyles = (colors) => StyleSheet.create({
   container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
+  desktopContainer: { padding: 4, backgroundColor: colors.background, flexGrow: 1 },
+  desktopRow: { flexDirection: 'row', gap: 32, alignItems: 'flex-start' },
+  desktopCol: { flex: 1 },
+  desktopResultCol: { position: 'sticky', top: 20 },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',

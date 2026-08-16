@@ -8,6 +8,7 @@ import Hoverable from '../components/Hoverable';
 import foodsPeru from '../data/foodsPeru';
 import foodsGuatemala from '../data/foodsGuatemala';
 import { lighten } from '../utils/color';
+import useResponsive from '../hooks/useResponsive';
 
 const DATASETS = { PE: foodsPeru, GT: foodsGuatemala };
 
@@ -28,7 +29,7 @@ function fmt(n) {
   return Number.isFinite(n) ? (Number.isInteger(n) ? n : n.toFixed(1)) : '—';
 }
 
-function FoodCard({ food, index, colors, styles }) {
+function FoodCard({ food, index, colors, styles, gridStyle }) {
   const entrance = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -42,10 +43,13 @@ function FoodCard({ food, index, colors, styles }) {
 
   return (
     <Animated.View
-      style={{
-        opacity: entrance,
-        transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
-      }}
+      style={[
+        gridStyle,
+        {
+          opacity: entrance,
+          transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+        },
+      ]}
     >
       <Hoverable scaleTo={1.015}>
         {({ hovered }) => (
@@ -96,6 +100,7 @@ function FoodCard({ food, index, colors, styles }) {
 export default function FoodsScreen() {
   const { colors } = useTheme();
   const { country, countries } = useCountry();
+  const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [search, setSearch] = useState('');
@@ -172,7 +177,7 @@ export default function FoodsScreen() {
         Fuente: tabla oficial {countryInfo.tableSource} ({countryInfo.name})
       </Text>
 
-      <ScrollView contentContainerStyle={styles.list}>
+      <ScrollView contentContainerStyle={[styles.list, isDesktop && styles.listGrid]}>
         {filtered.length === 0 ? (
           <View style={styles.emptyInline}>
             <Ionicons name="search-outline" size={26} color={colors.textFaint} />
@@ -180,7 +185,14 @@ export default function FoodsScreen() {
           </View>
         ) : (
           filtered.map((food, index) => (
-            <FoodCard key={food.name} food={food} index={index} colors={colors} styles={styles} />
+            <FoodCard
+              key={food.name}
+              food={food}
+              index={index}
+              colors={colors}
+              styles={styles}
+              gridStyle={isDesktop ? styles.cardGridItem : null}
+            />
           ))
         )}
       </ScrollView>
@@ -238,6 +250,8 @@ const getStyles = (colors) => StyleSheet.create({
   sourceHint: { fontSize: 11, color: colors.textFaint, marginTop: 10, marginHorizontal: 20 },
 
   list: { padding: 20, paddingTop: 12, gap: 10 },
+  listGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  cardGridItem: { width: '48.5%' },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 16,
