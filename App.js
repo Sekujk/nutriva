@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, BackHandler,
+  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, BackHandler, ScrollView,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ import FoodsScreen from './src/screens/FoodsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ProfileArea from './src/screens/profile/ProfileArea';
 import Hoverable from './src/components/Hoverable';
+import useResponsive from './src/hooks/useResponsive';
 
 const TABS = [
   { id: 'home', label: 'Inicio', icon: 'home', Component: HomeScreen },
@@ -29,19 +30,7 @@ const PROFILE_SCREEN = { id: 'profile', label: 'Perfil', icon: 'person-circle', 
 
 const ALL_SCREENS = [...TABS, PROFILE_SCREEN];
 
-function MainApp() {
-  const { session } = useAuth();
-  const { colors } = useTheme();
-  const styles = useMemo(() => getStyles(colors), [colors]);
-  const [activeTab, setActiveTab] = useState('home');
-
-  const activeTabInfo = ALL_SCREENS.find((tab) => tab.id === activeTab);
-  const ActiveComponent = activeTabInfo.Component;
-
-  const email = session?.user?.email || '';
-  const username = session?.user?.user_metadata?.username || '';
-  const onProfile = activeTab === 'profile';
-
+function useActiveTabAnimation(activeTab) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const isFirstRender = useRef(true);
@@ -59,17 +48,94 @@ function MainApp() {
     ]).start();
   }, [activeTab]);
 
-  useEffect(() => {
-    const onBackPress = () => {
-      if (activeTab !== 'home') {
-        setActiveTab('home');
-        return true;
-      }
-      return false;
-    };
-    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => subscription.remove();
-  }, [activeTab]);
+  return { fadeAnim, slideAnim };
+}
+
+function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email }) {
+  const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
+
+  return (
+    <View style={styles.desktopRoot}>
+      <View style={styles.sidebar}>
+        <View style={styles.sidebarBrand}>
+          <View style={styles.sidebarBadge}>
+            <Ionicons name="leaf" size={20} color={colors.primary} />
+          </View>
+          <Text style={styles.sidebarBrandText}>Nutriva</Text>
+        </View>
+
+        <View style={styles.sidebarNav}>
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <Hoverable key={tab.id} scaleTo={1}>
+                {({ hovered }) => (
+                  <TouchableOpacity
+                    style={[styles.sidebarItem, active && styles.sidebarItemActive, !active && hovered && styles.sidebarItemHovered]}
+                    onPress={() => setActiveTab(tab.id)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={tab.label}
+                  >
+                    <Ionicons
+                      name={active ? tab.icon : `${tab.icon}-outline`}
+                      size={20}
+                      color={active ? colors.primary : colors.textMuted}
+                    />
+                    <Text style={[styles.sidebarItemText, active && styles.sidebarItemTextActive]}>{tab.label}</Text>
+                  </TouchableOpacity>
+                )}
+              </Hoverable>
+            );
+          })}
+        </View>
+
+        <Hoverable scaleTo={1}>
+          {({ hovered }) => (
+            <TouchableOpacity
+              style={[styles.sidebarProfile, activeTab === 'profile' && styles.sidebarItemActive, activeTab !== 'profile' && hovered && styles.sidebarItemHovered]}
+              onPress={() => setActiveTab('profile')}
+              accessibilityRole="button"
+              accessibilityLabel="Perfil"
+            >
+              <View style={styles.sidebarAvatar}>
+                <Text style={styles.sidebarAvatarInitial}>{(username[0] || email[0] || '?').toUpperCase()}</Text>
+              </View>
+              <View style={styles.sidebarProfileTextCol}>
+                <Text style={styles.sidebarProfileName} numberOfLines={1}>{username || 'Perfil'}</Text>
+                {!!username && <Text style={styles.sidebarProfileEmail} numberOfLines={1}>{email}</Text>}
+              </View>
+            </TouchableOpacity>
+          )}
+        </Hoverable>
+      </View>
+
+      <View style={styles.desktopMain}>
+        <View style={styles.desktopHeader}>
+          <View style={styles.desktopHeaderBadge}>
+            <Ionicons name={activeTabInfo.icon} size={20} color={colors.primary} />
+          </View>
+          <Text style={styles.desktopHeaderTitle}>{activeTabInfo.label}</Text>
+        </View>
+
+        <ScrollView style={styles.desktopContentScroll} contentContainerStyle={styles.desktopContentScrollInner}>
+          <Animated.View
+            style={[
+              styles.desktopContentInner,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            <ActiveComponent onNavigate={setActiveTab} />
+          </Animated.View>
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
+function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email }) {
+  const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
+  const onProfile = activeTab === 'profile';
 
   return (
     <SafeAreaView style={styles.flex}>
@@ -134,6 +200,36 @@ function MainApp() {
       </View>
     </SafeAreaView>
   );
+}
+
+function MainApp() {
+  const { session } = useAuth();
+  const { colors } = useTheme();
+  const { isDesktop } = useResponsive();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+  const [activeTab, setActiveTab] = useState('home');
+
+  const activeTabInfo = ALL_SCREENS.find((tab) => tab.id === activeTab);
+  const ActiveComponent = activeTabInfo.Component;
+
+  const email = session?.user?.email || '';
+  const username = session?.user?.user_metadata?.username || '';
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return true;
+      }
+      return false;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [activeTab]);
+
+  const sharedProps = { activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email };
+
+  return isDesktop ? <DesktopShell {...sharedProps} /> : <MobileShell {...sharedProps} />;
 }
 
 function Root() {
@@ -271,4 +367,91 @@ const getStyles = (colors) => StyleSheet.create({
   tabButtonHovered: { backgroundColor: colors.surfaceMuted },
   tabLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
   tabLabelActive: { color: colors.primary },
+
+  // Desktop shell
+  desktopRoot: { flex: 1, flexDirection: 'row', backgroundColor: colors.background },
+  sidebar: {
+    width: 264,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingVertical: 24,
+    paddingHorizontal: 18,
+    justifyContent: 'flex-start',
+  },
+  sidebarBrand: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 32, paddingHorizontal: 6 },
+  sidebarBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  sidebarBrandText: { fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
+  sidebarNav: { gap: 4, flex: 1 },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 46,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  sidebarItemActive: { backgroundColor: colors.primarySoft },
+  sidebarItemHovered: { backgroundColor: colors.surfaceMuted },
+  sidebarItemText: { fontSize: 14.5, fontWeight: '600', color: colors.textMuted },
+  sidebarItemTextActive: { color: colors.primary, fontWeight: '700' },
+  sidebarProfile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 16,
+  },
+  sidebarAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  sidebarAvatarInitial: { fontSize: 14, fontWeight: '800', color: colors.primary },
+  sidebarProfileTextCol: { flex: 1 },
+  sidebarProfileName: { fontSize: 13.5, fontWeight: '700', color: colors.text },
+  sidebarProfileEmail: { fontSize: 11, color: colors.textFaint, marginTop: 1 },
+
+  desktopMain: { flex: 1 },
+  desktopHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 32,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  desktopHeaderBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  desktopHeaderTitle: { fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
+  desktopContentScroll: { flex: 1 },
+  desktopContentScrollInner: { flexGrow: 1, alignItems: 'center' },
+  desktopContentInner: { width: '100%', maxWidth: 880, paddingHorizontal: 8 },
 });

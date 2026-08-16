@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
 import Hoverable from '../components/Hoverable';
+import useResponsive from '../hooks/useResponsive';
 
 const SHORTCUTS = [
   {
@@ -26,7 +27,7 @@ const SHORTCUTS = [
   },
 ];
 
-function ShortcutCard({ shortcut, index, onPress, colors, styles }) {
+function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle }) {
   const entrance = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -40,10 +41,13 @@ function ShortcutCard({ shortcut, index, onPress, colors, styles }) {
 
   return (
     <Animated.View
-      style={{
-        opacity: entrance,
-        transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
-      }}
+      style={[
+        gridStyle,
+        {
+          opacity: entrance,
+          transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
+        },
+      ]}
     >
       <Hoverable scaleTo={1.02}>
         {({ hovered }) => (
@@ -72,6 +76,7 @@ function ShortcutCard({ shortcut, index, onPress, colors, styles }) {
 export default function HomeScreen({ onNavigate }) {
   const { session } = useAuth();
   const { colors } = useTheme();
+  const { isTablet } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const username = session?.user?.user_metadata?.username;
@@ -81,7 +86,7 @@ export default function HomeScreen({ onNavigate }) {
       <Text style={styles.greeting}>{username ? `Hola, ${username}` : 'Hola de nuevo'}</Text>
       <Text style={styles.subtitle}>¿Qué quieres hacer hoy?</Text>
 
-      <View style={styles.list}>
+      <View style={[styles.list, isTablet && styles.listGrid]}>
         {SHORTCUTS.map((s, index) => (
           <ShortcutCard
             key={s.tab}
@@ -90,6 +95,7 @@ export default function HomeScreen({ onNavigate }) {
             onPress={() => onNavigate?.(s.tab)}
             colors={colors}
             styles={styles}
+            gridStyle={isTablet ? styles.cardGridItem : null}
           />
         ))}
       </View>
@@ -102,6 +108,8 @@ const getStyles = (colors) => StyleSheet.create({
   greeting: { fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
   subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 4, marginBottom: 20 },
   list: { gap: 12 },
+  listGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  cardGridItem: { width: '48.5%' },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
