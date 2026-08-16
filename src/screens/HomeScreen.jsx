@@ -69,6 +69,12 @@ function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle }) {
             accessibilityLabel={shortcut.title}
           >
             <LinearGradient
+              colors={[colors.surface, lighten(colors.primarySoft, 0.1)]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <LinearGradient
               colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -130,10 +136,10 @@ const getStyles = (colors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 16,
     minHeight: 76,
+    overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
