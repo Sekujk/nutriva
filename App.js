@@ -17,7 +17,9 @@ import FoodsScreen from './src/screens/FoodsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ProfileArea from './src/screens/profile/ProfileArea';
 import Hoverable from './src/components/Hoverable';
+import HeroBadge from './src/components/HeroBadge';
 import useResponsive from './src/hooks/useResponsive';
+import { useAppFonts, FONT_DISPLAY } from './src/theme/typography';
 
 const TABS = [
   { id: 'home', label: 'Inicio', icon: 'home', Component: HomeScreen },
@@ -58,9 +60,7 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
     <View style={styles.desktopRoot}>
       <View style={styles.sidebar}>
         <View style={styles.sidebarBrand}>
-          <View style={styles.sidebarBadge}>
-            <Ionicons name="leaf" size={20} color={colors.primary} />
-          </View>
+          <HeroBadge icon="leaf" size={38} iconSize={18} />
           <Text style={styles.sidebarBrandText}>Nutriva</Text>
         </View>
 
@@ -144,9 +144,7 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
         <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.1 }]} />
 
         <Animated.View style={[styles.heroLeft, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.heroBadge}>
-            <Ionicons name={activeTabInfo.icon} size={22} color={colors.primary} />
-          </View>
+          <HeroBadge icon={activeTabInfo.icon} size={44} iconSize={22} />
           <Text style={styles.heroTitle}>{activeTabInfo.label}</Text>
         </Animated.View>
 
@@ -236,8 +234,9 @@ function Root() {
   const { session, isLoading } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const fontsLoaded = useAppFonts();
 
-  if (isLoading) {
+  if (isLoading || !fontsLoaded) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={colors.primary} />
@@ -305,17 +304,7 @@ const getStyles = (colors) => StyleSheet.create({
     bottom: -60,
     left: -30,
   },
-  heroBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  heroTitle: { fontSize: 24, fontWeight: '800', color: colors.background, letterSpacing: -0.4 },
+  heroTitle: { fontSize: 25, fontFamily: FONT_DISPLAY, color: colors.background, letterSpacing: -0.2 },
 
   profileCircle: {
     width: 44,
@@ -380,17 +369,7 @@ const getStyles = (colors) => StyleSheet.create({
     justifyContent: 'flex-start',
   },
   sidebarBrand: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 32, paddingHorizontal: 6 },
-  sidebarBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  sidebarBrandText: { fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
+  sidebarBrandText: { fontSize: 20, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: -0.2 },
   sidebarNav: { gap: 4, flex: 1 },
   sidebarItem: {
     flexDirection: 'row',
@@ -450,7 +429,7 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  desktopHeaderTitle: { fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
+  desktopHeaderTitle: { fontSize: 20, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: -0.2 },
   desktopContentScroll: { flex: 1 },
   desktopContentScrollInner: { flexGrow: 1, alignItems: 'center' },
   desktopContentInner: { width: '100%', maxWidth: 880, paddingHorizontal: 8 },

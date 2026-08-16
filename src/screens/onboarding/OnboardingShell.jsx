@@ -6,6 +6,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import Hoverable from '../../components/Hoverable';
+import HeroBadge from '../../components/HeroBadge';
+import { FONT_DISPLAY } from '../../theme/typography';
 
 export default function OnboardingShell({
   icon,
@@ -30,8 +32,8 @@ export default function OnboardingShell({
           <View style={[styles.blobLarge, { backgroundColor: colors.primarySoft, opacity: 0.5 }]} />
           <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.1 }]} />
 
-          <View style={styles.badge}>
-            <Ionicons name={icon} size={26} color={colors.primary} />
+          <View style={{ marginBottom: 14 }}>
+            <HeroBadge icon={icon} size={60} iconSize={26} />
           </View>
           <Text style={styles.heroTitle}>{title}</Text>
           {!!subtitle && <Text style={styles.heroSubtitle}>{subtitle}</Text>}
@@ -104,18 +106,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   blobLarge: { position: 'absolute', width: 200, height: 200, borderRadius: 100, top: -85, right: -55 },
   blobSmall: { position: 'absolute', width: 130, height: 130, borderRadius: 65, bottom: -55, left: -35 },
-  badge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    borderWidth: 3,
-    borderColor: colors.primary,
-  },
-  heroTitle: { fontSize: 26, fontWeight: '800', color: colors.background, letterSpacing: -0.4, textAlign: 'center' },
+  heroTitle: { fontSize: 27, fontFamily: FONT_DISPLAY, color: colors.background, letterSpacing: -0.2, textAlign: 'center' },
   heroSubtitle: {
     fontSize: 14,
     lineHeight: 20,

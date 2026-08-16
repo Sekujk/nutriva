@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
 import Hoverable from '../components/Hoverable';
 import useResponsive from '../hooks/useResponsive';
+import { lighten } from '../utils/color';
+import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../theme/typography';
 
 const SHORTCUTS = [
   {
@@ -26,6 +29,13 @@ const SHORTCUTS = [
     body: 'Tus casos guardados, como un cuaderno de trabajo.',
   },
 ];
+
+function greetingForHour(hour) {
+  if (hour < 6) return 'Buenas noches';
+  if (hour < 12) return 'Buenos días';
+  if (hour < 20) return 'Buenas tardes';
+  return 'Buenas noches';
+}
 
 function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle }) {
   const entrance = useRef(new Animated.Value(0)).current;
@@ -58,9 +68,14 @@ function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle }) {
             accessibilityRole="button"
             accessibilityLabel={shortcut.title}
           >
-            <View style={styles.cardIcon}>
+            <LinearGradient
+              colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardIcon}
+            >
               <Ionicons name={shortcut.icon} size={22} color={colors.primary} />
-            </View>
+            </LinearGradient>
             <View style={styles.cardTextCol}>
               <Text style={styles.cardTitle}>{shortcut.title}</Text>
               <Text style={styles.cardBody}>{shortcut.body}</Text>
@@ -80,10 +95,11 @@ export default function HomeScreen({ onNavigate }) {
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const username = session?.user?.user_metadata?.username;
+  const hourGreeting = useMemo(() => greetingForHour(new Date().getHours()), []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.greeting}>{username ? `Hola, ${username}` : 'Hola de nuevo'}</Text>
+      <Text style={styles.greeting}>{username ? `${hourGreeting}, ${username}` : hourGreeting}</Text>
       <Text style={styles.subtitle}>¿Qué quieres hacer hoy?</Text>
 
       <View style={[styles.list, isTablet && styles.listGrid]}>
@@ -105,8 +121,8 @@ export default function HomeScreen({ onNavigate }) {
 
 const getStyles = (colors) => StyleSheet.create({
   container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
-  greeting: { fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
-  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 4, marginBottom: 20 },
+  greeting: { fontSize: 26, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: -0.2 },
+  subtitle: { fontSize: 15, fontFamily: FONT_DISPLAY_ITALIC, color: colors.textMuted, marginTop: 4, marginBottom: 22 },
   list: { gap: 12 },
   listGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   cardGridItem: { width: '48.5%' },
@@ -140,6 +156,6 @@ const getStyles = (colors) => StyleSheet.create({
     justifyContent: 'center',
   },
   cardTextCol: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  cardTitle: { fontSize: 16.5, fontFamily: FONT_DISPLAY, color: colors.text },
   cardBody: { fontSize: 12.5, color: colors.textMuted, marginTop: 2, lineHeight: 17 },
 });
