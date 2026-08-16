@@ -34,6 +34,13 @@
         height: 100%;
         flex: 1;
       }
+      /* Edge/IE agregan su propio botón de "mostrar contraseña" dentro del
+         input, que se superpone al ícono del ojo de la app. Lo ocultamos
+         para que solo quede el botón propio de Nutriva. */
+      input[type="password"]::-ms-reveal,
+      input[type="password"]::-ms-clear {
+        display: none;
+      }
     </style>
   <meta name="theme-color" content="#5c8d72">
 <link rel="icon" href="/nutriva/favicon.ico" /></head>
@@ -43,6 +50,6 @@
       Necesitas activar JavaScript para usar Nutriva.
     </noscript>
     <div id="root"></div>
-  <script src="/nutriva/_expo/static/js/web/index-689b76e1398afa1fa09bb2d861b40880.js" defer></script>
+  <script src="/nutriva/_expo/static/js/web/index-5126812bb47e20d6f7f80234f13e3b3e.js" defer></script>
 </body>
 </html>
