@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
+import Hoverable from '../components/Hoverable';
 
 const SHORTCUTS = [
   {
@@ -25,6 +26,49 @@ const SHORTCUTS = [
   },
 ];
 
+function ShortcutCard({ shortcut, index, onPress, colors, styles }) {
+  const entrance = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: 320,
+      delay: index * 70,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: entrance,
+        transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
+      }}
+    >
+      <Hoverable scaleTo={1.02}>
+        {({ hovered }) => (
+          <TouchableOpacity
+            style={[styles.card, hovered && styles.cardHovered]}
+            onPress={onPress}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={shortcut.title}
+          >
+            <View style={styles.cardIcon}>
+              <Ionicons name={shortcut.icon} size={22} color={colors.primary} />
+            </View>
+            <View style={styles.cardTextCol}>
+              <Text style={styles.cardTitle}>{shortcut.title}</Text>
+              <Text style={styles.cardBody}>{shortcut.body}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
+          </TouchableOpacity>
+        )}
+      </Hoverable>
+    </Animated.View>
+  );
+}
+
 export default function HomeScreen({ onNavigate }) {
   const { session } = useAuth();
   const { colors } = useTheme();
@@ -38,23 +82,15 @@ export default function HomeScreen({ onNavigate }) {
       <Text style={styles.subtitle}>¿Qué quieres hacer hoy?</Text>
 
       <View style={styles.list}>
-        {SHORTCUTS.map((s) => (
-          <TouchableOpacity
+        {SHORTCUTS.map((s, index) => (
+          <ShortcutCard
             key={s.tab}
-            style={styles.card}
+            shortcut={s}
+            index={index}
             onPress={() => onNavigate?.(s.tab)}
-            accessibilityRole="button"
-            accessibilityLabel={s.title}
-          >
-            <View style={styles.cardIcon}>
-              <Ionicons name={s.icon} size={22} color={colors.primary} />
-            </View>
-            <View style={styles.cardTextCol}>
-              <Text style={styles.cardTitle}>{s.title}</Text>
-              <Text style={styles.cardBody}>{s.body}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
-          </TouchableOpacity>
+            colors={colors}
+            styles={styles}
+          />
         ))}
       </View>
     </ScrollView>
@@ -79,6 +115,13 @@ const getStyles = (colors) => StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  cardHovered: {
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    borderColor: colors.primary,
   },
   cardIcon: {
     width: 46,

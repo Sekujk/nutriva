@@ -16,6 +16,7 @@ import CalculatorScreen from './src/screens/CalculatorScreen';
 import FoodsScreen from './src/screens/FoodsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ProfileArea from './src/screens/profile/ProfileArea';
+import Hoverable from './src/components/Hoverable';
 
 const TABS = [
   { id: 'home', label: 'Inicio', icon: 'home', Component: HomeScreen },
@@ -83,17 +84,19 @@ function MainApp() {
           <Text style={styles.heroTitle}>{activeTabInfo.label}</Text>
         </Animated.View>
 
-        <TouchableOpacity
-          style={[styles.profileCircle, onProfile && styles.profileCircleActive]}
-          onPress={() => setActiveTab('profile')}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Perfil"
-        >
-          <Text style={[styles.profileInitial, onProfile && styles.profileInitialActive]}>
-            {(username[0] || email[0] || '?').toUpperCase()}
-          </Text>
-        </TouchableOpacity>
+        <Hoverable scaleTo={1.08}>
+          <TouchableOpacity
+            style={[styles.profileCircle, onProfile && styles.profileCircleActive]}
+            onPress={() => setActiveTab('profile')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Perfil"
+          >
+            <Text style={[styles.profileInitial, onProfile && styles.profileInitialActive]}>
+              {(username[0] || email[0] || '?').toUpperCase()}
+            </Text>
+          </TouchableOpacity>
+        </Hoverable>
       </View>
 
       <View style={styles.card}>
@@ -106,23 +109,26 @@ function MainApp() {
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (
-            <TouchableOpacity
-              key={tab.id}
-              style={[styles.tabButton, active && styles.tabButtonActive]}
-              onPress={() => setActiveTab(tab.id)}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={tab.label}
-            >
-              <Ionicons
-                name={active ? tab.icon : `${tab.icon}-outline`}
-                size={22}
-                color={active ? colors.primary : colors.textMuted}
-              />
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]} numberOfLines={1}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
+            <Hoverable key={tab.id} scaleTo={1.06} style={styles.tabButtonWrapper}>
+              {({ hovered }) => (
+                <TouchableOpacity
+                  style={[styles.tabButton, active && styles.tabButtonActive, !active && hovered && styles.tabButtonHovered]}
+                  onPress={() => setActiveTab(tab.id)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={tab.label}
+                >
+                  <Ionicons
+                    name={active ? tab.icon : `${tab.icon}-outline`}
+                    size={22}
+                    color={active || hovered ? colors.primary : colors.textMuted}
+                  />
+                  <Text style={[styles.tabLabel, (active || hovered) && styles.tabLabelActive]} numberOfLines={1}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </Hoverable>
           );
         })}
       </View>
@@ -259,8 +265,10 @@ const getStyles = (colors) => StyleSheet.create({
     shadowRadius: 14,
     elevation: 6,
   },
-  tabButton: { flex: 1, minHeight: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 3, paddingHorizontal: 2 },
+  tabButtonWrapper: { flex: 1 },
+  tabButton: { minHeight: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 3, paddingHorizontal: 2 },
   tabButtonActive: { backgroundColor: colors.primarySoft },
+  tabButtonHovered: { backgroundColor: colors.surfaceMuted },
   tabLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
   tabLabelActive: { color: colors.primary },
 });
