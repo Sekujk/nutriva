@@ -18,6 +18,11 @@
     "plugins": [
       "expo-font"
     ],
-    "owner": "sekujk"
+    "owner": "sekujk",
+    "extra": {
+      "eas": {
+        "projectId": "cbecf885-94fc-427e-858d-e3026e2290bc"
+      }
+    }
   }
 }
