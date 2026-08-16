@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/ThemeContext';
 import { useCountry } from '../context/CountryContext';
 import Hoverable from '../components/Hoverable';
 import foodsPeru from '../data/foodsPeru';
 import foodsGuatemala from '../data/foodsGuatemala';
+import { lighten } from '../utils/color';
 
 const DATASETS = { PE: foodsPeru, GT: foodsGuatemala };
 
@@ -49,9 +51,14 @@ function FoodCard({ food, index, colors, styles }) {
         {({ hovered }) => (
           <View style={[styles.card, hovered && styles.cardHovered]}>
             <View style={styles.cardTop}>
-              <View style={styles.cardIcon}>
+              <LinearGradient
+                colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.cardIcon}
+              >
                 <Ionicons name={GROUP_ICONS[food.group] || 'restaurant-outline'} size={18} color={colors.primary} />
-              </View>
+              </LinearGradient>
               <View style={styles.cardTitleCol}>
                 <Text style={styles.cardName}>{food.name}</Text>
                 <Text style={styles.cardGroup}>{food.group} · por 100 g</Text>
@@ -219,12 +226,13 @@ const getStyles = (colors) => StyleSheet.create({
     minHeight: 38,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: 'transparent',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontSize: 12.5, color: colors.textMuted, fontWeight: '600' },
+  chipText: { fontSize: 12.5, color: colors.primary, fontWeight: '600' },
   chipTextActive: { color: colors.background },
 
   sourceHint: { fontSize: 11, color: colors.textFaint, marginTop: 10, marginHorizontal: 20 },

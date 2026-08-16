@@ -25,7 +25,13 @@
       "display": "standalone"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nutriva necesita acceso a tus fotos para que puedas elegir una foto de perfil."
+        }
+      ]
     ],
     "owner": "sekujk",
     "extra": {

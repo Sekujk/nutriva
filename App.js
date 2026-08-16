@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, BackHandler, ScrollView,
+  View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, BackHandler, ScrollView,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,7 @@ import HistoryScreen from './src/screens/HistoryScreen';
 import ProfileArea from './src/screens/profile/ProfileArea';
 import Hoverable from './src/components/Hoverable';
 import HeroBadge from './src/components/HeroBadge';
+import Avatar from './src/components/Avatar';
 import useResponsive from './src/hooks/useResponsive';
 import { useAppFonts, FONT_DISPLAY } from './src/theme/typography';
 
@@ -53,7 +54,7 @@ function useActiveTabAnimation(activeTab) {
   return { fadeAnim, slideAnim };
 }
 
-function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email }) {
+function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl }) {
   const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
 
   return (
@@ -98,9 +99,13 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
               accessibilityRole="button"
               accessibilityLabel="Perfil"
             >
-              <View style={styles.sidebarAvatar}>
-                <Text style={styles.sidebarAvatarInitial}>{(username[0] || email[0] || '?').toUpperCase()}</Text>
-              </View>
+              <Avatar
+                uri={avatarUrl}
+                label={(username[0] || email[0] || '?').toUpperCase()}
+                size={34}
+                fontSize={14}
+                borderWidth={1.5}
+              />
               <View style={styles.sidebarProfileTextCol}>
                 <Text style={styles.sidebarProfileName} numberOfLines={1}>{username || 'Perfil'}</Text>
                 {!!username && <Text style={styles.sidebarProfileEmail} numberOfLines={1}>{email}</Text>}
@@ -133,7 +138,7 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
   );
 }
 
-function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email }) {
+function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl }) {
   const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
   const onProfile = activeTab === 'profile';
 
@@ -156,9 +161,13 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
             accessibilityRole="button"
             accessibilityLabel="Perfil"
           >
-            <Text style={[styles.profileInitial, onProfile && styles.profileInitialActive]}>
-              {(username[0] || email[0] || '?').toUpperCase()}
-            </Text>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.profileImage} />
+            ) : (
+              <Text style={[styles.profileInitial, onProfile && styles.profileInitialActive]}>
+                {(username[0] || email[0] || '?').toUpperCase()}
+              </Text>
+            )}
           </TouchableOpacity>
         </Hoverable>
       </View>
@@ -212,6 +221,7 @@ function MainApp() {
 
   const email = session?.user?.email || '';
   const username = session?.user?.user_metadata?.username || '';
+  const avatarUrl = session?.user?.user_metadata?.avatar_url || null;
 
   useEffect(() => {
     const onBackPress = () => {
@@ -225,7 +235,7 @@ function MainApp() {
     return () => subscription.remove();
   }, [activeTab]);
 
-  const sharedProps = { activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email };
+  const sharedProps = { activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl };
 
   return isDesktop ? <DesktopShell {...sharedProps} /> : <MobileShell {...sharedProps} />;
 }
@@ -260,14 +270,14 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <CountryProvider>
-          <AppAlertProvider>
-            <AuthProvider>
+        <AppAlertProvider>
+          <AuthProvider>
+            <CountryProvider>
               <ThemedStatusBar />
               <Root />
-            </AuthProvider>
-          </AppAlertProvider>
-        </CountryProvider>
+            </CountryProvider>
+          </AuthProvider>
+        </AppAlertProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
@@ -324,6 +334,7 @@ const getStyles = (colors) => StyleSheet.create({
   profileCircleActive: { backgroundColor: '#000000', borderColor: colors.background },
   profileInitial: { fontSize: 17, fontWeight: '800', color: colors.primary },
   profileInitialActive: { color: colors.primary },
+  profileImage: { width: 39, height: 39, borderRadius: 19.5 },
 
   card: {
     flex: 1,
@@ -395,17 +406,6 @@ const getStyles = (colors) => StyleSheet.create({
     borderTopColor: colors.border,
     paddingTop: 16,
   },
-  sidebarAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-  },
-  sidebarAvatarInitial: { fontSize: 14, fontWeight: '800', color: colors.primary },
   sidebarProfileTextCol: { flex: 1 },
   sidebarProfileName: { fontSize: 13.5, fontWeight: '700', color: colors.text },
   sidebarProfileEmail: { fontSize: 11, color: colors.textFaint, marginTop: 1 },

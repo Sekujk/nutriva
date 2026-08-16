@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import Hoverable from '../../components/Hoverable';
+import Avatar from '../../components/Avatar';
 import { FONT_DISPLAY } from '../../theme/typography';
 
 const MENU_MONTHS = [
@@ -69,6 +70,7 @@ export default function ProfileMenuScreen({ onNavigate }) {
 
   const email = session?.user?.email || '';
   const username = session?.user?.user_metadata?.username || '';
+  const avatarUrl = session?.user?.user_metadata?.avatar_url || null;
   const createdAt = session?.user?.created_at ? new Date(session.user.created_at) : null;
   const memberSince = createdAt ? `${MENU_MONTHS[createdAt.getMonth()]} de ${createdAt.getFullYear()}` : '';
 
@@ -83,9 +85,13 @@ export default function ProfileMenuScreen({ onNavigate }) {
             accessibilityRole="button"
             accessibilityLabel="Ver perfil"
           >
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitial}>{(username[0] || email[0] || '?').toUpperCase()}</Text>
-            </View>
+            <Avatar
+              uri={avatarUrl}
+              label={(username[0] || email[0] || '?').toUpperCase()}
+              size={56}
+              fontSize={22}
+              borderWidth={2}
+            />
             <View style={styles.headerTextCol}>
               <Text style={styles.username}>{username || email}</Text>
               {!!username && <Text style={styles.email}>{email}</Text>}
@@ -131,17 +137,6 @@ const getStyles = (colors) => StyleSheet.create({
     borderColor: 'transparent',
   },
   headerHovered: { borderColor: colors.primary, shadowOpacity: 0.12 },
-  avatarCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  avatarInitial: { fontSize: 22, fontWeight: '800', color: colors.primary },
   headerTextCol: { flex: 1 },
   username: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text },
   email: { fontSize: 12.5, color: colors.textMuted, marginTop: 1 },

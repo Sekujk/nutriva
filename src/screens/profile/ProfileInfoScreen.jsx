@@ -1,22 +1,52 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import { isValidBirthDate, toBirthDateString, formatBirthDate, calculateAge } from '../../utils/birthDate';
 import SubScreenHeader from './SubScreenHeader';
+import Avatar from '../../components/Avatar';
+import { FONT_DISPLAY } from '../../theme/typography';
 
 export default function ProfileInfoScreen({ onBack }) {
-  const { session, updateProfile } = useAuth();
+  const { session, updateProfile, uploadAvatar } = useAuth();
   const { colors } = useTheme();
   const { notify } = useAppAlert();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const email = session?.user?.email || '';
   const username = session?.user?.user_metadata?.username || '';
+  const avatarUrl = session?.user?.user_metadata?.avatar_url || null;
   const birthDate = session?.user?.user_metadata?.birth_date || '';
   const age = calculateAge(birthDate);
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const pickAvatar = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      notify({ title: 'Permiso necesario', message: 'Activa el acceso a tus fotos para elegir una imagen.', variant: 'warning' });
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatar(asset.uri, asset.mimeType || 'image/jpeg');
+    } catch (error) {
+      notify({ title: 'Error', message: error.message || 'No se pudo subir la foto', variant: 'error' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const [editingUsername, setEditingUsername] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState(username);
@@ -80,17 +110,21 @@ export default function ProfileInfoScreen({ onBack }) {
       <View style={styles.headerBlock}>
         <TouchableOpacity
           style={styles.avatarWrapper}
-          onPress={startEditingUsername}
-          disabled={editingUsername}
+          onPress={pickAvatar}
+          disabled={uploadingAvatar}
           accessibilityRole="button"
-          accessibilityLabel="Editar nombre de usuario"
+          accessibilityLabel="Cambiar foto de perfil"
         >
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitial}>{(username[0] || email[0] || '?').toUpperCase()}</Text>
-          </View>
-          <View style={styles.editBadge}>
-            <Ionicons name="pencil" size={14} color={colors.background} />
-          </View>
+          <Avatar uri={avatarUrl} label={(username[0] || email[0] || '?').toUpperCase()} size={76} fontSize={28} borderWidth={3} />
+          {uploadingAvatar ? (
+            <View style={styles.avatarLoading}>
+              <ActivityIndicator color={colors.background} />
+            </View>
+          ) : (
+            <View style={styles.editBadge}>
+              <Ionicons name="camera" size={14} color={colors.background} />
+            </View>
+          )}
         </TouchableOpacity>
 
         {editingUsername ? (
@@ -128,7 +162,15 @@ export default function ProfileInfoScreen({ onBack }) {
           </View>
         ) : (
           <>
-            <Text style={styles.username}>{username || email}</Text>
+            <TouchableOpacity
+              style={styles.usernameRow}
+              onPress={startEditingUsername}
+              accessibilityRole="button"
+              accessibilityLabel="Editar nombre de usuario"
+            >
+              <Text style={styles.username}>{username || email}</Text>
+              <Ionicons name="pencil-outline" size={15} color={colors.textFaint} />
+            </TouchableOpacity>
             {!!username && <Text style={styles.email}>{email}</Text>}
           </>
         )}
@@ -209,17 +251,17 @@ const getStyles = (colors) => StyleSheet.create({
   container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
   headerBlock: { alignItems: 'center', marginBottom: 18 },
   avatarWrapper: {},
-  avatarCircle: {
-    width: 76,
-    height: 76,
+  avatarLoading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: 38,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.primary,
   },
-  avatarInitial: { fontSize: 28, fontWeight: '800', color: colors.primary },
   editBadge: {
     position: 'absolute',
     right: -2,
@@ -233,7 +275,8 @@ const getStyles = (colors) => StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.background,
   },
-  username: { fontSize: 18, fontWeight: '800', color: colors.text, marginTop: 14 },
+  usernameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
+  username: { fontSize: 18, fontFamily: FONT_DISPLAY, color: colors.text },
   email: { fontSize: 13, fontWeight: '500', color: colors.textMuted, marginTop: 2 },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, width: '100%' },
   editInput: {
