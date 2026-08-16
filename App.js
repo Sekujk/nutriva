@@ -62,7 +62,7 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
     <View style={styles.desktopRoot}>
       <View style={styles.sidebar}>
         <View style={styles.sidebarBrand}>
-          <HeroBadge icon="leaf" size={38} iconSize={18} />
+          <HeroBadge emoji="🦦" size={38} iconSize={18} />
           <Text style={styles.sidebarBrandText}>Nutriva</Text>
         </View>
 
