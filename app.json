@@ -4,16 +4,25 @@
     "slug": "Nutriva",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#5c8d72",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sekujk.nutriva"
     },
     "android": {
-      "package": "com.sekujk.nutriva"
+      "package": "com.sekujk.nutriva",
+      "icon": "./assets/icon.png"
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/icon.png",
+      "name": "Nutriva",
+      "shortName": "Nutriva",
+      "themeColor": "#5c8d72",
+      "backgroundColor": "#5c8d72",
+      "display": "standalone"
     },
     "plugins": [
       "expo-font"
