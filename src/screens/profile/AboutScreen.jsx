@@ -6,8 +6,20 @@ import { useTheme } from '../../theme/ThemeContext';
 import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../../theme/typography';
 import SubScreenHeader from './SubScreenHeader';
 import Hoverable from '../../components/Hoverable';
+import HeroBadge from '../../components/HeroBadge';
 
 const GITHUB_URL = 'https://github.com/Sekujk/nutriva';
+
+const FEATURES = [
+  { icon: 'calculator-outline', text: 'Calculadoras clínicas con la fórmula siempre visible' },
+  { icon: 'restaurant-outline', text: 'Tablas de composición de alimentos de Perú y Guatemala' },
+  { icon: 'time-outline', text: 'Historial de casos, como un cuaderno de trabajo' },
+];
+
+const SOURCES = [
+  { country: 'Perú', name: 'INS — Tablas peruanas de composición de alimentos, 10ma ed. (2017)' },
+  { country: 'Guatemala', name: 'INCAP — Tabla de composición de alimentos de Centroamérica, 2da ed. (2012)' },
+];
 
 export default function AboutScreen({ onBack }) {
   const { colors } = useTheme();
@@ -20,13 +32,33 @@ export default function AboutScreen({ onBack }) {
       <SubScreenHeader title="Sobre la app" onBack={onBack} />
 
       <View style={styles.card}>
-        <View style={styles.iconBadge}>
-          <Text style={styles.iconEmoji}>🦦</Text>
-        </View>
+        <HeroBadge emoji="🦦" size={60} iconSize={30} />
         <Text style={styles.version}>Nutriva v{version}</Text>
         <Text style={styles.body}>
           Calculadoras clínicas y composición de alimentos para estudiantes de nutrición en Perú y Guatemala.
         </Text>
+      </View>
+
+      <Text style={styles.sectionLabel}>Qué incluye</Text>
+      <View style={styles.card}>
+        {FEATURES.map((f, i) => (
+          <View key={f.icon} style={[styles.featureRow, i > 0 && styles.featureRowDivider]}>
+            <View style={styles.featureIcon}>
+              <Ionicons name={f.icon} size={17} color={colors.primary} />
+            </View>
+            <Text style={styles.featureText}>{f.text}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Text style={styles.sectionLabel}>Fuentes de datos</Text>
+      <View style={styles.card}>
+        {SOURCES.map((s, i) => (
+          <View key={s.country} style={[styles.sourceRow, i > 0 && styles.featureRowDivider]}>
+            <Text style={styles.sourceCountry}>{s.country}</Text>
+            <Text style={styles.sourceName}>{s.name}</Text>
+          </View>
+        ))}
       </View>
 
       <Hoverable scaleTo={1.01}>
@@ -68,25 +100,41 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 24,
-    gap: 8,
+    gap: 10,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 2,
   },
-  iconBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  version: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text },
+  body: { fontSize: 13, color: colors.textMuted, textAlign: 'center', lineHeight: 18 },
+
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%', paddingVertical: 8 },
+  featureRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+  featureIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
-  iconEmoji: { fontSize: 28, lineHeight: 32 },
-  version: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text },
-  body: { fontSize: 13, color: colors.textMuted, textAlign: 'center', lineHeight: 18 },
+  featureText: { flex: 1, fontSize: 13.5, color: colors.text, fontWeight: '600', lineHeight: 19 },
+
+  sourceRow: { width: '100%', paddingVertical: 10, gap: 3 },
+  sourceCountry: { fontSize: 11.5, fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.4 },
+  sourceName: { fontSize: 13, color: colors.textMuted, lineHeight: 18 },
 
   row: {
     flexDirection: 'row',

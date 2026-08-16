@@ -18,8 +18,8 @@ export const AppAlertProvider = ({ children }) => {
     setState({ kind: 'notify', title, message, variant, buttonText });
   }, []);
 
-  const confirm = useCallback(({ title, message, confirmText, cancelText, destructive = false, onConfirm }) => {
-    setState({ kind: 'confirm', title, message, confirmText, cancelText, destructive, onConfirm });
+  const confirm = useCallback(({ title, message, items, confirmText, cancelText, destructive = false, confirmationWord, onConfirm }) => {
+    setState({ kind: 'confirm', title, message, items, confirmText, cancelText, destructive, confirmationWord, onConfirm });
   }, []);
 
   const close = useCallback(() => setState(null), []);

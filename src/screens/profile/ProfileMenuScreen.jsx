@@ -110,10 +110,17 @@ export default function ProfileMenuScreen({ onNavigate }) {
   const handleDeleteAccount = () => {
     confirm({
       title: 'Eliminar cuenta',
-      message: 'Esta acción es permanente y no se puede deshacer. Se eliminará tu cuenta y todos tus datos de Nutriva para siempre.',
+      message: 'Esta acción es permanente y no se puede deshacer. Se borra para siempre:',
+      items: [
+        'Tu perfil: nombre, foto y fecha de nacimiento',
+        'Todo tu historial de cálculos guardados',
+        'Tu país y tus preferencias de apariencia',
+        'Tu acceso a Nutriva con este correo',
+      ],
       confirmText: 'Eliminar para siempre',
       cancelText: 'Cancelar',
       destructive: true,
+      confirmationWord: 'ELIMINAR',
       onConfirm: async () => {
         setDeleting(true);
         try {
