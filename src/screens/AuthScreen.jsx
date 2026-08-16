@@ -10,11 +10,13 @@ import { useAppAlert } from '../context/AppAlertContext';
 import Hoverable from '../components/Hoverable';
 import HeroBadge from '../components/HeroBadge';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
+import useResponsive from '../hooks/useResponsive';
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuth();
   const { colors } = useTheme();
   const { notify } = useAppAlert();
+  const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -77,25 +79,25 @@ export default function AuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, isDesktop && styles.scrollContentDesktop]}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        <View style={styles.hero}>
+        <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
           <View style={[styles.blobLarge, { backgroundColor: colors.primarySoft, opacity: 0.5 }]} />
           <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.1 }]} />
 
           <Animated.View style={{ transform: [{ scale: badgeScale }], marginBottom: 14 }}>
-            <HeroBadge emoji="🦦" size={72} iconSize={36} />
+            <HeroBadge emoji="🦦" size={isDesktop ? 56 : 72} iconSize={isDesktop ? 28 : 36} />
           </Animated.View>
 
-          <Text style={styles.heroTitle}>Nutriva</Text>
+          <Text style={[styles.heroTitle, isDesktop && styles.heroTitleDesktop]}>Nutriva</Text>
           <Text style={styles.heroTagline}>
             Cálculos clínicos y composición de alimentos para estudiantes de nutrición
           </Text>
         </View>
 
-        <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <Animated.View style={[styles.card, isDesktop && styles.cardDesktop, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <Animated.Text
             style={[styles.formTitle, { opacity: modeOpacity, transform: [{ translateX: modeTranslateX }] }]}
           >
@@ -191,6 +193,12 @@ export default function AuthScreen() {
 const getStyles = (colors) => StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1 },
+  scrollContentDesktop: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    backgroundColor: colors.surfaceMuted,
+  },
 
   hero: {
     backgroundColor: colors.primary,
@@ -199,6 +207,13 @@ const getStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
     overflow: 'hidden',
+  },
+  heroDesktop: {
+    width: 440,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 40,
+    paddingBottom: 32,
   },
   blobLarge: {
     position: 'absolute',
@@ -223,6 +238,7 @@ const getStyles = (colors) => StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: 8,
   },
+  heroTitleDesktop: { fontSize: 28 },
   heroTagline: {
     fontSize: 14.5,
     lineHeight: 21,
@@ -242,6 +258,19 @@ const getStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 28,
     paddingBottom: 32,
+  },
+  cardDesktop: {
+    width: 440,
+    flexGrow: 0,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingHorizontal: 32,
+    paddingBottom: 36,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.16,
+    shadowRadius: 48,
+    elevation: 12,
   },
 
   formTitle: {

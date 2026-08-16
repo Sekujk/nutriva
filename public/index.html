@@ -34,6 +34,13 @@
         height: 100%;
         flex: 1;
       }
+      /* Edge/IE agregan su propio botón de "mostrar contraseña" dentro del
+         input, que se superpone al ícono del ojo de la app. Lo ocultamos
+         para que solo quede el botón propio de Nutriva. */
+      input[type="password"]::-ms-reveal,
+      input[type="password"]::-ms-clear {
+        display: none;
+      }
     </style>
   </head>
 
