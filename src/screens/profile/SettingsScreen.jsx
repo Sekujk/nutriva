@@ -6,6 +6,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useCountry } from '../../context/CountryContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import SubScreenHeader from './SubScreenHeader';
+import CountryFlag from '../../components/CountryFlag';
 
 export default function SettingsScreen({ onBack }) {
   const { signOut, deleteAccount } = useAuth();
@@ -53,7 +54,8 @@ export default function SettingsScreen({ onBack }) {
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={c.name}
               >
-                <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{c.flag} {c.name}</Text>
+                <CountryFlag code={c.code} size={16} style={styles.segmentFlag} />
+                <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{c.name}</Text>
               </TouchableOpacity>
             );
           })}
@@ -112,7 +114,8 @@ const getStyles = (colors) => StyleSheet.create({
     padding: 5,
     gap: 4,
   },
-  segmentButton: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  segmentButton: { flex: 1, flexDirection: 'row', gap: 8, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  segmentFlag: {},
   segmentButtonActive: {
     backgroundColor: colors.primary,
     shadowColor: colors.primary,

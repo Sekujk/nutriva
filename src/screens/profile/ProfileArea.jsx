@@ -5,14 +5,14 @@ import ProfileInfoScreen from './ProfileInfoScreen';
 import SettingsScreen from './SettingsScreen';
 import AppearanceScreen from './AppearanceScreen';
 import FaqScreen from './FaqScreen';
-import UpdatesScreen from './UpdatesScreen';
+import AboutScreen from './AboutScreen';
 
 const SUB_SCREENS = {
   perfil: ProfileInfoScreen,
   configuracion: SettingsScreen,
   apariencia: AppearanceScreen,
   faq: FaqScreen,
-  actualizaciones: UpdatesScreen,
+  sobre: AboutScreen,
 };
 
 export default function ProfileArea() {

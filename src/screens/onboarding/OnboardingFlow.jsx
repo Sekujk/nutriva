@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
 import { useCountry } from '../../context/CountryContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import { isValidBirthDate, toBirthDateString } from '../../utils/birthDate';
@@ -8,7 +8,7 @@ import CountryStep from './CountryStep';
 import WelcomeStep from './WelcomeStep';
 
 export default function OnboardingFlow() {
-  const { completeOnboarding } = useAuth();
+  const { completeOnboarding } = useProfile();
   const { countries, setCountry } = useCountry();
   const { notify } = useAppAlert();
 

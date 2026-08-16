@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
 import { useTheme } from '../../theme/ThemeContext';
 import Hoverable from '../../components/Hoverable';
 import Avatar from '../../components/Avatar';
@@ -17,7 +18,7 @@ const MENU_ITEMS = [
   { key: 'configuracion', icon: 'settings-outline', label: 'Configuración', body: 'País y datos de tu cuenta' },
   { key: 'apariencia', icon: 'color-palette-outline', label: 'Apariencia', body: 'Modo claro/oscuro y color de la app' },
   { key: 'faq', icon: 'help-circle-outline', label: 'Preguntas frecuentes', body: 'Dudas comunes sobre Nutriva' },
-  { key: 'actualizaciones', icon: 'sparkles-outline', label: 'Actualizaciones', body: 'Versión y novedades de la app' },
+  { key: 'sobre', icon: 'sparkles-outline', label: 'Sobre la app', body: 'Versión, código y agradecimientos' },
 ];
 
 function MenuRow({ item, index, onPress, colors, styles }) {
@@ -65,12 +66,13 @@ function MenuRow({ item, index, onPress, colors, styles }) {
 
 export default function ProfileMenuScreen({ onNavigate }) {
   const { session } = useAuth();
+  const { profile } = useProfile();
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const email = session?.user?.email || '';
-  const username = session?.user?.user_metadata?.username || '';
-  const avatarUrl = session?.user?.user_metadata?.avatar_url || null;
+  const username = profile?.username || '';
+  const avatarUrl = profile?.avatar_url || null;
   const createdAt = session?.user?.created_at ? new Date(session.user.created_at) : null;
   const memberSince = createdAt ? `${MENU_MONTHS[createdAt.getMonth()]} de ${createdAt.getFullYear()}` : '';
 

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import OnboardingShell from './OnboardingShell';
+import CountryFlag from '../../components/CountryFlag';
 
 export default function CountryStep({
   countries, selectedCode, onSelect,
@@ -50,7 +51,7 @@ export default function CountryStep({
               accessibilityState={{ selected: active }}
               accessibilityLabel={c.name}
             >
-              <Text style={styles.flag}>{c.flag}</Text>
+              <CountryFlag code={c.code} size={30} />
               <View style={styles.rowTextCol}>
                 <Text style={[styles.rowName, active && styles.rowNameActive]}>{c.name}</Text>
                 <Text style={styles.rowSource}>Tabla {c.tableSource}</Text>
@@ -95,7 +96,6 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   rowActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  flag: { fontSize: 30 },
   rowTextCol: { flex: 1 },
   rowName: { fontSize: 16, fontWeight: '700', color: colors.text },
   rowNameActive: { color: colors.primary },
