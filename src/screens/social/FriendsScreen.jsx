@@ -40,7 +40,7 @@ function Tag({ tag, style }) {
 
 const APP_URL = 'https://sekujk.github.io/nutriva/';
 
-export default function FriendsScreen({ onOpenGroups }) {
+export default function FriendsScreen({ onOpenGroups, onOpenChat }) {
   const { session } = useAuth();
   const { profile } = useProfile();
   const { colors } = useTheme();
@@ -436,18 +436,26 @@ export default function FriendsScreen({ onOpenGroups }) {
               <Hoverable key={f.friendshipId} scaleTo={1.01}>
                 {({ hovered }) => (
                   <View style={[styles.friendRow, hovered && styles.rowHovered]}>
-                    <LinearGradient
-                      colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.avatarRing}
+                    <TouchableOpacity
+                      style={styles.friendRowMain}
+                      onPress={() => onOpenChat(f, f.friendshipId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Abrir chat con ${f.username}#${f.tag}`}
                     >
-                      <Avatar uri={f.avatar_url} label={(f.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
-                    </LinearGradient>
-                    <View style={styles.rowTextCol}>
-                      <Text style={styles.friendName}>{f.username}<Tag tag={f.tag} style={styles.rowTag} /></Text>
-                      {!!f.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(f.created_at)}</Text>}
-                    </View>
+                      <LinearGradient
+                        colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.avatarRing}
+                      >
+                        <Avatar uri={f.avatar_url} label={(f.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
+                      </LinearGradient>
+                      <View style={styles.rowTextCol}>
+                        <Text style={styles.friendName}>{f.username}<Tag tag={f.tag} style={styles.rowTag} /></Text>
+                        {!!f.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(f.created_at)}</Text>}
+                      </View>
+                      <Ionicons name="chatbubble-outline" size={17} color={colors.primary} />
+                    </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.iconButton}
                       onPress={() => handleUnfriend(f)}
@@ -572,7 +580,7 @@ const getStyles = (colors) => StyleSheet.create({
   friendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 12,
@@ -585,6 +593,7 @@ const getStyles = (colors) => StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
+  friendRowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowHovered: { borderColor: colors.primary },
   rowIconPlain: {
     width: 34,

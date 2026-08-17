@@ -3,6 +3,7 @@ import { Animated, BackHandler, StyleSheet, View } from 'react-native';
 import FriendsScreen from './FriendsScreen';
 import GroupsScreen from './GroupsScreen';
 import GroupDetailScreen from './GroupDetailScreen';
+import FriendChatScreen from './FriendChatScreen';
 import useResponsive from '../../hooks/useResponsive';
 
 export default function FriendsArea() {
@@ -36,7 +37,7 @@ export default function FriendsArea() {
         setView({ screen: 'grupos' });
         return true;
       }
-      if (view.screen === 'grupos') {
+      if (view.screen === 'grupos' || view.screen === 'chat-amigo') {
         setView({ screen: 'amigos' });
         return true;
       }
@@ -63,8 +64,21 @@ export default function FriendsArea() {
         onOpenGroup={(groupId, groupName) => setView({ screen: 'grupo', groupId, groupName })}
       />
     );
+  } else if (view.screen === 'chat-amigo') {
+    content = (
+      <FriendChatScreen
+        friend={view.friend}
+        friendshipId={view.friendshipId}
+        onBack={() => setView({ screen: 'amigos' })}
+      />
+    );
   } else {
-    content = <FriendsScreen onOpenGroups={() => setView({ screen: 'grupos' })} />;
+    content = (
+      <FriendsScreen
+        onOpenGroups={() => setView({ screen: 'grupos' })}
+        onOpenChat={(friend, friendshipId) => setView({ screen: 'chat-amigo', friend, friendshipId })}
+      />
+    );
   }
 
   return (
