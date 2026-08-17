@@ -98,34 +98,23 @@ export default function FriendsScreen({ onOpenGroups }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const tagMatch = search.trim().match(/^(.+)#([A-Za-z0-9]{6})$/);
+
   useEffect(() => {
-    const query = search.trim();
-    if (query.length < 2) {
+    if (!tagMatch) {
       setResults([]);
       return;
     }
     let cancelled = false;
     setSearching(true);
     const timeout = setTimeout(async () => {
-      const tagMatch = query.match(/^(.+)#([A-Za-z0-9]{6})$/);
-      let request;
-      if (tagMatch) {
-        request = supabase
-          .from('searchable_profiles')
-          .select('*')
-          .ilike('username', tagMatch[1])
-          .eq('tag', tagMatch[2].toUpperCase())
-          .neq('id', myId)
-          .limit(8);
-      } else {
-        request = supabase
-          .from('searchable_profiles')
-          .select('*')
-          .ilike('username', `%${query}%`)
-          .neq('id', myId)
-          .limit(8);
-      }
-      const { data } = await request;
+      const { data } = await supabase
+        .from('searchable_profiles')
+        .select('*')
+        .ilike('username', tagMatch[1])
+        .eq('tag', tagMatch[2].toUpperCase())
+        .neq('id', myId)
+        .limit(1);
       if (!cancelled) {
         setResults(data || []);
         setSearching(false);
@@ -240,21 +229,25 @@ export default function FriendsScreen({ onOpenGroups }) {
         <Ionicons name="search-outline" size={19} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar por nombre o nombre#código"
+          placeholder="nombre#código, ej. maria#1Y32U1"
           placeholderTextColor={colors.placeholder}
           value={search}
           onChangeText={setSearch}
           autoCapitalize="none"
-          accessibilityLabel="Buscar amigos"
+          accessibilityLabel="Buscar por nombre y código completo"
         />
       </View>
 
-      {search.trim().length >= 2 && (
+      {search.trim().length > 0 && !tagMatch && (
+        <Text style={styles.searchHint}>Escribe el nombre y el código completo, con #. Solo así aparece alguien.</Text>
+      )}
+
+      {!!tagMatch && (
         <View style={styles.section}>
           {searching ? (
             <ActivityIndicator color={colors.primary} style={{ marginVertical: 12 }} />
           ) : results.length === 0 ? (
-            <Text style={styles.emptyHint}>Nadie con ese nombre o código.</Text>
+            <Text style={styles.emptyHint}>Nadie con ese nombre y código.</Text>
           ) : (
             <View style={styles.list}>
               {results.map((r) => {
@@ -474,6 +467,7 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   emptyHint: { fontSize: 13, color: colors.textMuted, textAlign: 'center', paddingVertical: 14 },
+  searchHint: { fontSize: 12, color: colors.textFaint, marginTop: -8, marginBottom: 16, marginLeft: 4 },
 
   groupsRow: {
     flexDirection: 'row',
