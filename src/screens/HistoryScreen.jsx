@@ -10,6 +10,7 @@ import { lighten } from '../utils/color';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import Hoverable from '../components/Hoverable';
 import useResponsive from '../hooks/useResponsive';
+import CalculationBreakdown from '../components/CalculationBreakdown';
 
 const MONTHS_SHORT = [
   'ene', 'feb', 'mar', 'abr', 'may', 'jun',
@@ -37,7 +38,7 @@ const monthGroupLabel = (iso) => {
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
-function HistoryCard({ item, index, deleting, onDelete, colors, styles }) {
+function HistoryCard({ item, index, deleting, onDelete, onOpen, colors, styles }) {
   const entrance = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -58,7 +59,13 @@ function HistoryCard({ item, index, deleting, onDelete, colors, styles }) {
     >
       <Hoverable scaleTo={1.008}>
         {({ hovered }) => (
-          <View style={[styles.card, hovered && styles.cardHovered]}>
+          <TouchableOpacity
+            style={[styles.card, hovered && styles.cardHovered]}
+            onPress={() => onOpen(item)}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`Ver cómo se calculó el caso del ${formatDate(item.created_at)}`}
+          >
             <View style={styles.cardHeader}>
               <LinearGradient
                 colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
@@ -106,7 +113,12 @@ function HistoryCard({ item, index, deleting, onDelete, colors, styles }) {
                 <Text style={styles.cardResultUnit}>kcal/día</Text>
               </View>
             </View>
-          </View>
+
+            <View style={styles.cardHint}>
+              <Ionicons name="grid-outline" size={12} color={colors.textFaint} />
+              <Text style={styles.cardHintText}>Toca para ver cómo se calculó</Text>
+            </View>
+          </TouchableOpacity>
         )}
       </Hoverable>
     </Animated.View>
@@ -123,6 +135,7 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [deletingId, setDeletingId] = useState(null);
+  const [openItem, setOpenItem] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -209,6 +222,7 @@ export default function HistoryScreen() {
                     index={cardIndex}
                     deleting={deletingId === item.id}
                     onDelete={handleDelete}
+                    onOpen={setOpenItem}
                     colors={colors}
                     styles={styles}
                   />
@@ -218,6 +232,8 @@ export default function HistoryScreen() {
           </View>
         ))}
       </View>
+
+      <CalculationBreakdown visible={!!openItem} calc={openItem} onClose={() => setOpenItem(null)} />
     </ScrollView>
   );
 }
@@ -298,4 +314,6 @@ const getStyles = (colors) => StyleSheet.create({
   cardResultLabel: { fontSize: 10.5, color: colors.textFaint, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
   cardResultValue: { fontSize: 20, fontFamily: FONT_DISPLAY_BOLD, color: colors.primary, marginTop: 3 },
   cardResultUnit: { fontSize: 10, color: colors.textFaint, marginTop: 1 },
+  cardHint: { flexDirection: 'row', alignItems: 'center', gap: 4, justifyContent: 'center', marginTop: 10 },
+  cardHintText: { fontSize: 10.5, color: colors.textFaint },
 });
