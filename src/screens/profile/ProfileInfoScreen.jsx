@@ -183,6 +183,16 @@ export default function ProfileInfoScreen({ onBack }) {
               <Ionicons name="pencil-outline" size={15} color={colors.textFaint} />
             </TouchableOpacity>
             {!!username && <Text style={styles.email}>{email}</Text>}
+            {!!profile?.tag && (
+              <View
+                style={styles.tagPill}
+                accessible
+                accessibilityLabel={`Tu código es ${profile.tag}, no se puede cambiar`}
+              >
+                <Ionicons name="lock-closed-outline" size={11} color={colors.textFaint} />
+                <Text style={styles.tagPillText}>#{profile.tag}</Text>
+              </View>
+            )}
           </>
         )}
       </View>
@@ -290,6 +300,17 @@ const getStyles = (colors) => StyleSheet.create({
   usernameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
   username: { fontSize: 18, fontFamily: FONT_DISPLAY, color: colors.text },
   email: { fontSize: 13, fontWeight: '500', color: colors.textMuted, marginTop: 2 },
+  tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginTop: 8,
+  },
+  tagPillText: { fontSize: 12, fontWeight: '700', color: colors.textFaint },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, width: '100%' },
   editInput: {
     flex: 1,

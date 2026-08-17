@@ -158,7 +158,10 @@ export default function ProfileMenuScreen({ onNavigate }) {
               />
             </LinearGradient>
             <View style={styles.headerTextCol}>
-              <Text style={styles.username}>{username || email}</Text>
+              <Text style={styles.username}>
+                {username || email}
+                {!!(username && profile?.tag) && <Text style={styles.usernameTag}>#{profile.tag}</Text>}
+              </Text>
               {!!username && <Text style={styles.email}>{email}</Text>}
               {!!memberSince && (
                 <View style={styles.memberPill}>
@@ -241,6 +244,7 @@ const getStyles = (colors) => StyleSheet.create({
   avatarRing: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
   headerTextCol: { flex: 1 },
   username: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text },
+  usernameTag: { fontSize: 13, fontFamily: FONT_DISPLAY_ITALIC, color: colors.textFaint },
   email: { fontSize: 12.5, color: colors.textMuted, marginTop: 1 },
   memberPill: {
     flexDirection: 'row',
