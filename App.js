@@ -16,6 +16,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import CalculatorScreen from './src/screens/CalculatorScreen';
 import FoodsScreen from './src/screens/FoodsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
+import FriendsArea from './src/screens/social/FriendsArea';
 import ProfileArea from './src/screens/profile/ProfileArea';
 import Hoverable from './src/components/Hoverable';
 import HeroBadge from './src/components/HeroBadge';
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'calculator', label: 'Calculadora', icon: 'calculator', Component: CalculatorScreen },
   { id: 'foods', label: 'Alimentos', icon: 'restaurant', Component: FoodsScreen },
   { id: 'history', label: 'Historial', icon: 'time', Component: HistoryScreen },
+  { id: 'friends', label: 'Amigos', icon: 'people', Component: FriendsArea },
 ];
 
 const PROFILE_SCREEN = { id: 'profile', label: 'Perfil', icon: 'person-circle', Component: ProfileArea };
