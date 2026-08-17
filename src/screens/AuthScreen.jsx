@@ -10,6 +10,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useAppAlert } from '../context/AppAlertContext';
 import Hoverable from '../components/Hoverable';
 import HeroBadge from '../components/HeroBadge';
+import Captcha from '../components/Captcha';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
 import useResponsive from '../hooks/useResponsive';
 import { darken } from '../utils/color';
@@ -33,6 +34,8 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
 
   const passwordRef = useRef(null);
+  const captchaRef = useRef(null);
+  const captchaPromiseRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
@@ -59,6 +62,21 @@ export default function AuthScreen() {
   const modeOpacity = modeAnim;
   const modeTranslateX = modeAnim.interpolate({ inputRange: [0, 1], outputRange: [isSignUp ? 24 : -24, 0] });
 
+  const getCaptchaToken = () => new Promise((resolve, reject) => {
+    captchaPromiseRef.current = { resolve, reject };
+    captchaRef.current?.execute();
+  });
+
+  const handleCaptchaVerify = (token) => {
+    captchaPromiseRef.current?.resolve(token);
+    captchaPromiseRef.current = null;
+  };
+
+  const handleCaptchaError = () => {
+    captchaPromiseRef.current?.reject(new Error('No se pudo verificar que no eres un robot. Intenta de nuevo.'));
+    captchaPromiseRef.current = null;
+  };
+
   const handleSubmit = async () => {
     if (!email || !password) {
       notify({ title: 'Faltan datos', message: 'Ingresa email y contraseña', variant: 'warning' });
@@ -66,13 +84,14 @@ export default function AuthScreen() {
     }
     setLoading(true);
     try {
+      const captchaToken = await getCaptchaToken();
       if (isSignUp) {
-        const { requiresEmailConfirmation } = await signUp(email, password);
+        const { requiresEmailConfirmation } = await signUp(email, password, captchaToken);
         if (requiresEmailConfirmation) {
           notify({ title: 'Cuenta creada', message: 'Revisa tu email para confirmar la cuenta.', variant: 'success' });
         }
       } else {
-        await signIn(email, password);
+        await signIn(email, password, captchaToken);
       }
     } catch (error) {
       notify({ title: 'Error', message: error.message || 'No se pudo completar la acción', variant: 'error' });
@@ -83,6 +102,8 @@ export default function AuthScreen() {
 
   const formFields = (
     <>
+      <Captcha ref={captchaRef} onVerify={handleCaptchaVerify} onError={handleCaptchaError} />
+
       <Animated.Text
         style={[styles.formTitle, { opacity: modeOpacity, transform: [{ translateX: modeTranslateX }] }]}
       >

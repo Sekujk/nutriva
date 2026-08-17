@@ -28,14 +28,14 @@ export const AuthProvider = ({ children }) => {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+  const signUp = async (email, password, captchaToken) => {
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { captchaToken } });
     if (error) throw error;
     return { requiresEmailConfirmation: !data.session };
   };
 
-  const signIn = async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const signIn = async (email, password, captchaToken) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } });
     if (error) throw error;
   };
 
