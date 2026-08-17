@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { useProfile } from '../../context/ProfileContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import Avatar from '../../components/Avatar';
 import Hoverable from '../../components/Hoverable';
-import { lighten } from '../../utils/color';
-import { FONT_DISPLAY } from '../../theme/typography';
+import { darken, lighten } from '../../utils/color';
+import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../../theme/typography';
 
 const MONTHS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -21,12 +22,30 @@ const formatSince = (iso) => {
   return `${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
 };
 
+const copyToClipboard = async (text) => {
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // sigue al fallback
+  }
+  return false;
+};
+
+function Tag({ tag, style }) {
+  return <Text style={style}>#{tag}</Text>;
+}
+
 export default function FriendsScreen({ onOpenGroups }) {
   const { session } = useAuth();
+  const { profile } = useProfile();
   const { colors } = useTheme();
   const { notify, confirm } = useAppAlert();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const myId = session?.user?.id;
+  const myHandle = profile?.username && profile?.tag ? `${profile.username}#${profile.tag}` : null;
 
   const [loading, setLoading] = useState(true);
   const [friends, setFriends] = useState([]);
@@ -88,12 +107,25 @@ export default function FriendsScreen({ onOpenGroups }) {
     let cancelled = false;
     setSearching(true);
     const timeout = setTimeout(async () => {
-      const { data } = await supabase
-        .from('searchable_profiles')
-        .select('*')
-        .ilike('username', `%${query}%`)
-        .neq('id', myId)
-        .limit(8);
+      const tagMatch = query.match(/^(.+)#([A-Za-z0-9]{6})$/);
+      let request;
+      if (tagMatch) {
+        request = supabase
+          .from('searchable_profiles')
+          .select('*')
+          .ilike('username', tagMatch[1])
+          .eq('tag', tagMatch[2].toUpperCase())
+          .neq('id', myId)
+          .limit(8);
+      } else {
+        request = supabase
+          .from('searchable_profiles')
+          .select('*')
+          .ilike('username', `%${query}%`)
+          .neq('id', myId)
+          .limit(8);
+      }
+      const { data } = await request;
       if (!cancelled) {
         setResults(data || []);
         setSearching(false);
@@ -120,11 +152,11 @@ export default function FriendsScreen({ onOpenGroups }) {
 
       if (reverse.data && reverse.data.status === 'pending') {
         await supabase.from('friendships').update({ status: 'accepted', responded_at: new Date().toISOString() }).eq('id', reverse.data.id);
-        notify({ title: 'Ya son amigos', message: `${target.username} también te había mandado solicitud.`, variant: 'success' });
+        notify({ title: 'Ya son amigos', message: `${target.username}#${target.tag} también te había mandado solicitud.`, variant: 'success' });
       } else {
         const { error } = await supabase.from('friendships').insert({ requester_id: myId, addressee_id: target.id });
         if (error) throw error;
-        notify({ title: 'Solicitud enviada', message: `Le avisamos a ${target.username}.`, variant: 'success' });
+        notify({ title: 'Solicitud enviada', message: `Le avisamos a ${target.username}#${target.tag}.`, variant: 'success' });
       }
       setSearch('');
       await load();
@@ -158,11 +190,21 @@ export default function FriendsScreen({ onOpenGroups }) {
   const handleUnfriend = (row) => {
     confirm({
       title: 'Quitar amigo',
-      message: `${row.username} ya no va a poder ver tu foto ni tus grupos compartidos.`,
+      message: `${row.username}#${row.tag} ya no va a poder ver tu foto ni tus grupos compartidos.`,
       confirmText: 'Quitar',
       cancelText: 'Cancelar',
       destructive: true,
       onConfirm: () => removeFriendship(row),
+    });
+  };
+
+  const handleCopyHandle = async () => {
+    if (!myHandle) return;
+    const copied = Platform.OS === 'web' ? await copyToClipboard(myHandle) : false;
+    notify({
+      title: copied ? 'Código copiado' : 'Tu código',
+      message: copied ? `${myHandle} está en tu portapapeles.` : `Compártelo tal cual: ${myHandle}`,
+      variant: 'success',
     });
   };
 
@@ -176,11 +218,29 @@ export default function FriendsScreen({ onOpenGroups }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {!!myHandle && (
+        <LinearGradient
+          colors={[darken(colors.primary, 0.35), colors.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.handleCard}
+        >
+          <View style={styles.handleTextCol}>
+            <Text style={styles.handleLabel}>Tu código</Text>
+            <Text style={styles.handleValue}>{profile.username}<Text style={styles.handleTag}>#{profile.tag}</Text></Text>
+            <Text style={styles.handleHint}>Compártelo para que te agreguen. Hay más de una persona con tu mismo nombre.</Text>
+          </View>
+          <TouchableOpacity style={styles.copyButton} onPress={handleCopyHandle} accessibilityRole="button" accessibilityLabel="Copiar tu código">
+            <Ionicons name="copy-outline" size={17} color={colors.primary} />
+          </TouchableOpacity>
+        </LinearGradient>
+      )}
+
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={19} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar por nombre de usuario"
+          placeholder="Buscar por nombre o nombre#código"
           placeholderTextColor={colors.placeholder}
           value={search}
           onChangeText={setSearch}
@@ -194,7 +254,7 @@ export default function FriendsScreen({ onOpenGroups }) {
           {searching ? (
             <ActivityIndicator color={colors.primary} style={{ marginVertical: 12 }} />
           ) : results.length === 0 ? (
-            <Text style={styles.emptyHint}>Nadie con ese nombre de usuario.</Text>
+            <Text style={styles.emptyHint}>Nadie con ese nombre o código.</Text>
           ) : (
             <View style={styles.list}>
               {results.map((r) => {
@@ -204,7 +264,9 @@ export default function FriendsScreen({ onOpenGroups }) {
                     <View style={styles.rowIconPlain}>
                       <Ionicons name="person-outline" size={18} color={colors.primary} />
                     </View>
-                    <Text style={styles.rowLabel}>{r.username}</Text>
+                    <View style={styles.rowTextCol}>
+                      <Text style={styles.rowLabel}>{r.username}<Tag tag={r.tag} style={styles.rowTag} /></Text>
+                    </View>
                     {already ? (
                       <Text style={styles.alreadyText}>Ya agregado</Text>
                     ) : (
@@ -213,7 +275,7 @@ export default function FriendsScreen({ onOpenGroups }) {
                         onPress={() => sendRequest(r)}
                         disabled={pendingAction === r.id}
                         accessibilityRole="button"
-                        accessibilityLabel={`Agregar a ${r.username}`}
+                        accessibilityLabel={`Agregar a ${r.username}#${r.tag}`}
                       >
                         {pendingAction === r.id ? (
                           <ActivityIndicator size="small" color={colors.background} />
@@ -238,11 +300,16 @@ export default function FriendsScreen({ onOpenGroups }) {
             accessibilityRole="button"
             accessibilityLabel="Ver grupos"
           >
-            <View style={styles.groupsIcon}>
-              <Ionicons name="people-outline" size={19} color={colors.primary} />
-            </View>
+            <LinearGradient
+              colors={[darken(colors.primary, 0.3), colors.primary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.groupsIcon}
+            >
+              <Ionicons name="people" size={18} color={colors.background} />
+            </LinearGradient>
             <View style={styles.rowTextCol}>
-              <Text style={styles.rowLabel}>Grupos</Text>
+              <Text style={styles.groupsTitle}>Grupos</Text>
               <Text style={styles.rowSub}>Organiza a tus amigos por sección o curso</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
@@ -259,13 +326,15 @@ export default function FriendsScreen({ onOpenGroups }) {
                 <View style={styles.rowIconPlain}>
                   <Ionicons name="person-outline" size={18} color={colors.primary} />
                 </View>
-                <Text style={styles.rowLabel}>{r.username}</Text>
+                <View style={styles.rowTextCol}>
+                  <Text style={styles.rowLabel}>{r.username}<Tag tag={r.tag} style={styles.rowTag} /></Text>
+                </View>
                 <TouchableOpacity
                   style={styles.iconButton}
                   onPress={() => removeFriendship(r)}
                   disabled={pendingAction === r.friendshipId}
                   accessibilityRole="button"
-                  accessibilityLabel={`Rechazar a ${r.username}`}
+                  accessibilityLabel={`Rechazar a ${r.username}#${r.tag}`}
                 >
                   <Ionicons name="close" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
@@ -274,7 +343,7 @@ export default function FriendsScreen({ onOpenGroups }) {
                   onPress={() => acceptRequest(r)}
                   disabled={pendingAction === r.friendshipId}
                   accessibilityRole="button"
-                  accessibilityLabel={`Aceptar a ${r.username}`}
+                  accessibilityLabel={`Aceptar a ${r.username}#${r.tag}`}
                 >
                   {pendingAction === r.friendshipId ? (
                     <ActivityIndicator size="small" color={colors.background} />
@@ -297,14 +366,16 @@ export default function FriendsScreen({ onOpenGroups }) {
                 <View style={styles.rowIconPlain}>
                   <Ionicons name="person-outline" size={18} color={colors.primary} />
                 </View>
-                <Text style={styles.rowLabel}>{r.username}</Text>
+                <View style={styles.rowTextCol}>
+                  <Text style={styles.rowLabel}>{r.username}<Tag tag={r.tag} style={styles.rowTag} /></Text>
+                </View>
                 <Text style={styles.pendingText}>Pendiente</Text>
                 <TouchableOpacity
                   style={styles.iconButton}
                   onPress={() => removeFriendship(r)}
                   disabled={pendingAction === r.friendshipId}
                   accessibilityRole="button"
-                  accessibilityLabel={`Cancelar solicitud a ${r.username}`}
+                  accessibilityLabel={`Cancelar solicitud a ${r.username}#${r.tag}`}
                 >
                   <Ionicons name="close" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
@@ -322,7 +393,7 @@ export default function FriendsScreen({ onOpenGroups }) {
               <Ionicons name="people-outline" size={26} color={colors.primary} />
             </View>
             <Text style={styles.emptyTitle}>Todavía no tienes amigos</Text>
-            <Text style={styles.emptyBody}>Busca a alguien por su nombre de usuario para empezar.</Text>
+            <Text style={styles.emptyBody}>Busca a alguien por su nombre o su código para empezar.</Text>
           </View>
         ) : (
           <View style={styles.list}>
@@ -339,7 +410,7 @@ export default function FriendsScreen({ onOpenGroups }) {
                       <Avatar uri={f.avatar_url} label={(f.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
                     </LinearGradient>
                     <View style={styles.rowTextCol}>
-                      <Text style={styles.rowLabel}>{f.username}</Text>
+                      <Text style={styles.friendName}>{f.username}<Tag tag={f.tag} style={styles.rowTag} /></Text>
                       {!!f.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(f.created_at)}</Text>}
                     </View>
                     <TouchableOpacity
@@ -347,7 +418,7 @@ export default function FriendsScreen({ onOpenGroups }) {
                       onPress={() => handleUnfriend(f)}
                       disabled={pendingAction === f.friendshipId}
                       accessibilityRole="button"
-                      accessibilityLabel={`Quitar a ${f.username}`}
+                      accessibilityLabel={`Quitar a ${f.username}#${f.tag}`}
                     >
                       <Ionicons name="person-remove-outline" size={17} color={colors.textFaint} />
                     </TouchableOpacity>
@@ -365,6 +436,28 @@ export default function FriendsScreen({ onOpenGroups }) {
 const getStyles = (colors) => StyleSheet.create({
   container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+
+  handleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 18,
+    gap: 12,
+  },
+  handleTextCol: { flex: 1 },
+  handleLabel: { fontSize: 11, fontWeight: '700', color: colors.background, opacity: 0.75, textTransform: 'uppercase', letterSpacing: 0.6 },
+  handleValue: { fontSize: 19, fontFamily: FONT_DISPLAY, color: colors.background, marginTop: 4 },
+  handleTag: { fontFamily: FONT_DISPLAY_ITALIC, opacity: 0.75 },
+  handleHint: { fontSize: 11.5, color: colors.background, opacity: 0.8, marginTop: 6, lineHeight: 15 },
+  copyButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   searchWrapper: { justifyContent: 'center', marginBottom: 16 },
   searchIcon: { position: 'absolute', left: 14, zIndex: 1 },
@@ -400,14 +493,8 @@ const getStyles = (colors) => StyleSheet.create({
     borderColor: 'transparent',
   },
   groupsRowHovered: { borderColor: colors.primary, shadowOpacity: 0.1 },
-  groupsIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  groupsIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  groupsTitle: { fontSize: 15, fontFamily: FONT_DISPLAY, color: colors.text },
 
   section: { marginBottom: 20 },
   sectionLabel: {
@@ -458,7 +545,9 @@ const getStyles = (colors) => StyleSheet.create({
   },
   avatarRing: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   rowTextCol: { flex: 1 },
-  rowLabel: { flex: 1, fontSize: 14.5, fontWeight: '700', color: colors.text },
+  rowLabel: { fontSize: 14.5, fontWeight: '700', color: colors.text },
+  friendName: { fontSize: 15, fontFamily: FONT_DISPLAY, color: colors.text },
+  rowTag: { fontSize: 12, fontWeight: '600', color: colors.textFaint },
   rowSub: { fontSize: 11.5, color: colors.textFaint, marginTop: 2 },
 
   addButton: { minHeight: 34, minWidth: 76, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
