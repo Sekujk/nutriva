@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAppAlert } from '../context/AppAlertContext';
 import { supabase } from '../config/supabase';
 import useResponsive from '../hooks/useResponsive';
+import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
 
 const ACTIVITY_FACTORS = [
   { key: 'sedentario', label: 'Sedentario', value: 1.2 },
@@ -25,6 +26,7 @@ const TMB_FORMULAS = [
   {
     key: 'mifflin',
     label: 'Mifflin-St Jeor',
+    hint: 'La más usada actualmente. Buena precisión para población adulta en general.',
     compute: (sex, w, h, a) => (sex === 'M' ? 10 * w + 6.25 * h - 5 * a + 5 : 10 * w + 6.25 * h - 5 * a - 161),
     formula: (sex, w, h, a) => (sex === 'M'
       ? `10×${w} + 6.25×${h} − 5×${a} + 5`
@@ -33,6 +35,7 @@ const TMB_FORMULAS = [
   {
     key: 'harrisBenedict',
     label: 'Harris-Benedict',
+    hint: 'Fórmula clásica, revisada en 1984. Suele dar un valor algo más alto que Mifflin-St Jeor.',
     compute: (sex, w, h, a) => (sex === 'M'
       ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * a
       : 447.593 + 9.247 * w + 3.098 * h - 4.330 * a),
@@ -43,6 +46,7 @@ const TMB_FORMULAS = [
   {
     key: 'schofield',
     label: 'Schofield (OMS/FAO)',
+    hint: 'Adoptada por la OMS y la FAO. Usa el peso según el tramo de edad; solo para adultos.',
     note: 'Válida para 18 años o más.',
     compute: (sex, w, h, a) => {
       if (a < 18) return null;
@@ -63,6 +67,18 @@ const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
   return Number.isFinite(n) ? n : null;
 };
+
+function StepHeader({ number, icon, title, colors, styles }) {
+  return (
+    <View style={styles.stepHeader}>
+      <View style={styles.stepBadge}>
+        <Text style={styles.stepBadgeText}>{number}</Text>
+      </View>
+      <Text style={styles.stepTitle}>{title}</Text>
+      <Ionicons name={icon} size={17} color={colors.textFaint} style={styles.stepIcon} />
+    </View>
+  );
+}
 
 function EditableResultRow({ icon, label, formula, value, unit, override, onChangeOverride, onReset, colors, styles }) {
   return (
@@ -161,99 +177,113 @@ export default function CalculatorScreen() {
 
   const formContent = (
     <>
-      <Text style={styles.sectionTitle}>Datos</Text>
+      <View style={styles.stepCard}>
+        <StepHeader number="1" icon="person-outline" title="Paciente" colors={colors} styles={styles} />
 
-      <View style={styles.sexRow}>
-        {[{ key: 'F', label: 'Mujer' }, { key: 'M', label: 'Hombre' }].map((opt) => (
-          <TouchableOpacity
-            key={opt.key}
-            style={[styles.sexButton, sex === opt.key && styles.sexButtonActive]}
-            onPress={() => setSex(opt.key)}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: sex === opt.key }}
-            accessibilityLabel={opt.label}
-          >
-            <Text style={[styles.sexButtonText, sex === opt.key && styles.sexButtonTextActive]}>{opt.label}</Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.sexRow}>
+          {[{ key: 'F', label: 'Mujer', icon: 'female' }, { key: 'M', label: 'Hombre', icon: 'male' }].map((opt) => (
+            <TouchableOpacity
+              key={opt.key}
+              style={[styles.sexButton, sex === opt.key && styles.sexButtonActive]}
+              onPress={() => setSex(opt.key)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: sex === opt.key }}
+              accessibilityLabel={opt.label}
+            >
+              <Ionicons name={opt.icon} size={16} color={sex === opt.key ? colors.background : colors.textMuted} />
+              <Text style={[styles.sexButtonText, sex === opt.key && styles.sexButtonTextActive]}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.inputRow}>
+          <View style={styles.inputCol}>
+            <Text style={styles.label}>Peso (kg)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              value={weight}
+              onChangeText={setWeight}
+              placeholder="70"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Peso en kilogramos"
+            />
+          </View>
+          <View style={styles.inputCol}>
+            <Text style={styles.label}>Talla (cm)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              value={height}
+              onChangeText={setHeight}
+              placeholder="165"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Talla en centimetros"
+            />
+          </View>
+          <View style={styles.inputCol}>
+            <Text style={styles.label}>Edad</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="number-pad"
+              value={age}
+              onChangeText={setAge}
+              placeholder="22"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Edad en años"
+            />
+          </View>
+        </View>
       </View>
 
-      <View style={styles.inputRow}>
-        <View style={styles.inputCol}>
-          <Text style={styles.label}>Peso (kg)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="decimal-pad"
-            value={weight}
-            onChangeText={setWeight}
-            placeholder="70"
-            placeholderTextColor={colors.placeholder}
-            accessibilityLabel="Peso en kilogramos"
-          />
+      <View style={styles.stepCard}>
+        <StepHeader number="2" icon="flame-outline" title="Fórmula de TMB" colors={colors} styles={styles} />
+
+        <View style={styles.chipsWrap}>
+          {TMB_FORMULAS.map((f) => (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.chip, formulaKey === f.key && styles.chipActive]}
+              onPress={() => setFormulaKey(f.key)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: formulaKey === f.key }}
+              accessibilityLabel={f.label}
+            >
+              <Text style={[styles.chipText, formulaKey === f.key && styles.chipTextActive]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        <View style={styles.inputCol}>
-          <Text style={styles.label}>Talla (cm)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="decimal-pad"
-            value={height}
-            onChangeText={setHeight}
-            placeholder="165"
-            placeholderTextColor={colors.placeholder}
-            accessibilityLabel="Talla en centimetros"
-          />
+
+        <View style={styles.hintCard}>
+          <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
+          <Text style={styles.hintText}>{formula.hint}</Text>
         </View>
-        <View style={styles.inputCol}>
-          <Text style={styles.label}>Edad</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="number-pad"
-            value={age}
-            onChangeText={setAge}
-            placeholder="22"
-            placeholderTextColor={colors.placeholder}
-            accessibilityLabel="Edad en años"
-          />
-        </View>
+        {!!formula.note && hasInputs && a < 18 && (
+          <Text style={styles.formulaWarning}>{formula.note}</Text>
+        )}
       </View>
 
-      <Text style={styles.label}>Fórmula de TMB</Text>
-      <View style={styles.activityWrap}>
-        {TMB_FORMULAS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.activityChip, formulaKey === f.key && styles.activityChipActive]}
-            onPress={() => setFormulaKey(f.key)}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: formulaKey === f.key }}
-            accessibilityLabel={f.label}
-          >
-            <Text style={[styles.activityChipText, formulaKey === f.key && styles.activityChipTextActive]}>
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      {!!formula.note && hasInputs && a < 18 && (
-        <Text style={styles.formulaNote}>{formula.note}</Text>
-      )}
+      <View style={styles.stepCard}>
+        <StepHeader number="3" icon="walk-outline" title="Nivel de actividad" colors={colors} styles={styles} />
 
-      <Text style={styles.label}>Factor de actividad</Text>
-      <View style={styles.activityWrap}>
-        {ACTIVITY_FACTORS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.activityChip, activityKey === f.key && styles.activityChipActive]}
-            onPress={() => setActivityKey(f.key)}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: activityKey === f.key }}
-            accessibilityLabel={f.label}
-          >
-            <Text style={[styles.activityChipText, activityKey === f.key && styles.activityChipTextActive]}>
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.chipsWrap}>
+          {ACTIVITY_FACTORS.map((f) => (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.chip, activityKey === f.key && styles.chipActive]}
+              onPress={() => setActivityKey(f.key)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: activityKey === f.key }}
+              accessibilityLabel={f.label}
+            >
+              <Text style={[styles.chipText, activityKey === f.key && styles.chipTextActive]}>
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     </>
   );
@@ -269,6 +299,11 @@ export default function CalculatorScreen() {
       </View>
       {hasInputs ? (
         <View style={styles.resultCard}>
+          <Text style={styles.resultExplainer}>
+            <Text style={styles.resultExplainerEmphasis}>TMB</Text> es lo que tu cuerpo gasta solo por estar vivo, en reposo.{' '}
+            <Text style={styles.resultExplainerEmphasis}>GET</Text> es tu gasto total del día, sumando tu nivel de actividad.
+          </Text>
+
           <EditableResultRow
             icon="flame"
             label={`TMB (${formula.label})`}
@@ -341,11 +376,35 @@ export default function CalculatorScreen() {
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
+  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1, gap: 14 },
   desktopContainer: { padding: 4, backgroundColor: colors.background, flexGrow: 1 },
   desktopRow: { flexDirection: 'row', gap: 32, alignItems: 'flex-start' },
-  desktopCol: { flex: 1 },
+  desktopCol: { flex: 1, gap: 14 },
   desktopResultCol: { position: 'sticky', top: 20 },
+
+  stepCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 18,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  stepBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBadgeText: { fontSize: 12, fontWeight: '800', color: colors.background },
+  stepTitle: { flex: 1, fontSize: 15, fontFamily: FONT_DISPLAY, color: colors.text },
+  stepIcon: { opacity: 0.7 },
+
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
@@ -367,15 +426,18 @@ const getStyles = (colors) => StyleSheet.create({
     marginBottom: 12,
   },
   editableBadgeText: { fontSize: 11, fontWeight: '700', color: colors.primary },
-  sexRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
+
+  sexRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   sexButton: {
     flex: 1,
-    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 46,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   sexButtonActive: {
     backgroundColor: colors.primary,
@@ -388,7 +450,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   sexButtonText: { fontSize: 14, fontWeight: '600', color: colors.text },
   sexButtonTextActive: { color: colors.background },
-  inputRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
+  inputRow: { flexDirection: 'row', gap: 10 },
   inputCol: { flex: 1 },
   label: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 6 },
   input: {
@@ -399,10 +461,11 @@ const getStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     minHeight: 48,
     color: colors.text,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
   },
-  activityWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  activityChip: {
+
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
@@ -410,10 +473,22 @@ const getStyles = (colors) => StyleSheet.create({
     borderColor: 'transparent',
     backgroundColor: colors.primarySoft,
   },
-  activityChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  activityChipText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
-  activityChipTextActive: { color: colors.background },
-  formulaNote: { fontSize: 11.5, color: colors.warning, marginTop: -4, marginBottom: 14 },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
+  chipTextActive: { color: colors.background },
+
+  hintCard: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: colors.primarySoft,
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 12,
+  },
+  hintIcon: { marginTop: 1 },
+  hintText: { flex: 1, fontSize: 12.5, color: colors.primary, lineHeight: 17 },
+  formulaWarning: { fontSize: 11.5, color: colors.warning, marginTop: 8, marginLeft: 2 },
+
   resultCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
@@ -424,6 +499,17 @@ const getStyles = (colors) => StyleSheet.create({
     shadowRadius: 16,
     elevation: 3,
   },
+  resultExplainer: {
+    fontSize: 13,
+    fontFamily: FONT_DISPLAY_ITALIC,
+    color: colors.textMuted,
+    lineHeight: 19,
+    marginBottom: 18,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  resultExplainerEmphasis: { color: colors.primary },
   resultRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   resultIcon: {
     width: 36,
@@ -457,7 +543,7 @@ const getStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: FONT_DISPLAY_BOLD,
     color: colors.primary,
     minWidth: 90,
     borderWidth: 1.5,
