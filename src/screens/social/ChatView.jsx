@@ -7,6 +7,7 @@ import { useCountry } from '../../context/CountryContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { FONT_DISPLAY } from '../../theme/typography';
 import Avatar from '../../components/Avatar';
+import CalculationBreakdown from '../../components/CalculationBreakdown';
 import foodsPeru from '../../data/foodsPeru';
 import foodsGuatemala from '../../data/foodsGuatemala';
 
@@ -40,9 +41,9 @@ function FoodAttachment({ attachment, mine, colors, styles }) {
   );
 }
 
-function CalculationAttachment({ attachment, mine, colors, styles }) {
+function CalculationAttachment({ attachment, mine, colors, styles, onOpen }) {
   return (
-    <View style={[styles.attachCard, mine && styles.attachCardMine]}>
+    <TouchableOpacity style={[styles.attachCard, mine && styles.attachCardMine]} onPress={onOpen} accessibilityRole="button" accessibilityLabel="Ver cómo se calculó">
       <View style={styles.attachHeaderRow}>
         <Ionicons name="flash-outline" size={14} color={mine ? colors.background : colors.primary} />
         <Text style={[styles.attachTitle, mine && styles.attachTitleMine]} numberOfLines={2}>
@@ -54,11 +55,15 @@ function CalculationAttachment({ attachment, mine, colors, styles }) {
         <Text style={[styles.macroText, mine && styles.attachSubMine]}>TMB {fmt(attachment.tmb)} kcal</Text>
         <Text style={[styles.macroText, mine && styles.attachSubMine]}>GET {fmt(attachment.get)} kcal</Text>
       </View>
-    </View>
+      <View style={styles.attachTapHint}>
+        <Ionicons name="grid-outline" size={10} color={mine ? colors.background : colors.textFaint} />
+        <Text style={[styles.attachTapHintText, mine && styles.attachSubMine]}>Toca para ver el detalle</Text>
+      </View>
+    </TouchableOpacity>
   );
 }
 
-function MessageBubble({ message, mine, sender, showSenderName, colors, styles }) {
+function MessageBubble({ message, mine, sender, showSenderName, colors, styles, onOpenCalculation }) {
   const entrance = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -88,7 +93,13 @@ function MessageBubble({ message, mine, sender, showSenderName, colors, styles }
           <FoodAttachment attachment={message.attachment} mine={mine} colors={colors} styles={styles} />
         )}
         {message.attachment_kind === 'calculation' && (
-          <CalculationAttachment attachment={message.attachment} mine={mine} colors={colors} styles={styles} />
+          <CalculationAttachment
+            attachment={message.attachment}
+            mine={mine}
+            colors={colors}
+            styles={styles}
+            onOpen={() => onOpenCalculation(message.attachment)}
+          />
         )}
         <Text style={[styles.time, mine && styles.timeMine]}>{formatTime(message.created_at)}</Text>
       </View>
@@ -177,6 +188,7 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
   const [foodQuery, setFoodQuery] = useState('');
   const [calculations, setCalculations] = useState(null);
   const [loadingCalcs, setLoadingCalcs] = useState(false);
+  const [openCalc, setOpenCalc] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -276,7 +288,14 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
       attachment: {
         label: calc.label,
         activity_label: calc.activity_label,
+        activity_key: calc.activity_key,
+        activity_factor: calc.activity_factor,
+        formula_key: calc.formula_key,
         formula_label: calc.formula_label,
+        sex: calc.sex,
+        weight: calc.weight,
+        height: calc.height,
+        age: calc.age,
         tmb: calc.tmb,
         get: calc.get,
       },
@@ -313,6 +332,7 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
   }
 
   return (
+    <>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.messagesList}>
         {messages.length === 0 ? (
@@ -330,6 +350,7 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
               showSenderName={showSenderName}
               colors={colors}
               styles={styles}
+              onOpenCalculation={setOpenCalc}
             />
           ))
         )}
@@ -438,6 +459,8 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
         </View>
       )}
     </KeyboardAvoidingView>
+    <CalculationBreakdown visible={!!openCalc} calc={openCalc} onClose={() => setOpenCalc(null)} />
+    </>
   );
 }
 
@@ -496,6 +519,8 @@ const getStyles = (colors) => StyleSheet.create({
   attachSubMine: { color: colors.background, opacity: 0.85 },
   macroRow: { flexDirection: 'row', gap: 10, marginTop: 2 },
   macroText: { fontSize: 10.5, color: colors.textMuted, fontWeight: '600' },
+  attachTapHint: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 6 },
+  attachTapHintText: { fontSize: 9.5, color: colors.textFaint },
 
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: colors.border },
   attachButton: {
