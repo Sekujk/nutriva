@@ -126,16 +126,30 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
           <Text style={styles.desktopHeaderTitle}>{activeTabInfo.label}</Text>
         </View>
 
-        <ScrollView style={styles.desktopContentScroll} contentContainerStyle={styles.desktopContentScrollInner}>
-          <Animated.View
-            style={[
-              styles.desktopContentInner,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <ActiveComponent onNavigate={setActiveTab} />
-          </Animated.View>
-        </ScrollView>
+        {activeTab === 'friends' ? (
+          <View style={styles.desktopContentFlexWrap}>
+            <Animated.View
+              style={[
+                styles.desktopContentInner,
+                styles.desktopContentInnerFlex,
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+              ]}
+            >
+              <ActiveComponent onNavigate={setActiveTab} />
+            </Animated.View>
+          </View>
+        ) : (
+          <ScrollView style={styles.desktopContentScroll} contentContainerStyle={styles.desktopContentScrollInner}>
+            <Animated.View
+              style={[
+                styles.desktopContentInner,
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+              ]}
+            >
+              <ActiveComponent onNavigate={setActiveTab} />
+            </Animated.View>
+          </ScrollView>
+        )}
       </View>
     </View>
   );
@@ -440,4 +454,6 @@ const getStyles = (colors) => StyleSheet.create({
   desktopContentScroll: { flex: 1 },
   desktopContentScrollInner: { flexGrow: 1, alignItems: 'center' },
   desktopContentInner: { width: '100%', maxWidth: 880, paddingHorizontal: 8 },
+  desktopContentFlexWrap: { flex: 1, alignItems: 'center' },
+  desktopContentInnerFlex: { flex: 1 },
 });
