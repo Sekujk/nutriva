@@ -11,6 +11,7 @@ import Hoverable from '../../components/Hoverable';
 import { lighten } from '../../utils/color';
 import { FONT_DISPLAY } from '../../theme/typography';
 import SubScreenHeader from '../profile/SubScreenHeader';
+import ChatView from './ChatView';
 
 const MONTHS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -28,6 +29,7 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
   const styles = useMemo(() => getStyles(colors), [colors]);
   const myId = session?.user?.id;
 
+  const [tab, setTab] = useState('chat');
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
@@ -36,6 +38,8 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
   const [busyId, setBusyId] = useState(null);
 
   const isOwner = group?.owner_id === myId;
+
+  const membersById = useMemo(() => Object.fromEntries(members.map((m) => [m.id, m])), [members]);
 
   const load = useCallback(async () => {
     const [{ data: groupRow }, { data: memberRows }] = await Promise.all([
@@ -142,100 +146,141 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <SubScreenHeader title={group?.name || groupName || 'Grupo'} onBack={onBack} />
-
-      {pickerOpen && (
-        <View style={styles.pickerCard}>
-          <View style={styles.pickerHeader}>
-            <Text style={styles.pickerTitle}>Agregar de tus amigos</Text>
-            <TouchableOpacity onPress={() => setPickerOpen(false)} accessibilityRole="button" accessibilityLabel="Cerrar">
-              <Ionicons name="close" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-          {candidates.length === 0 ? (
-            <Text style={styles.emptyHint}>No queda nadie para agregar.</Text>
-          ) : (
-            candidates.map((c) => (
-              <View key={c.id} style={styles.pickerRow}>
-                <Text style={styles.rowLabel}>{c.username}<Text style={styles.rowTag}>#{c.tag}</Text></Text>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => addMember(c)}
-                  disabled={busyId === c.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Agregar a ${c.username}#${c.tag}`}
-                >
-                  {busyId === c.id ? <ActivityIndicator size="small" color={colors.background} /> : <Text style={styles.addButtonText}>Agregar</Text>}
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
+    <View style={styles.flex}>
+      <View style={styles.headerArea}>
+        <SubScreenHeader title={group?.name || groupName || 'Grupo'} onBack={onBack} />
+        <View style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tabButton, tab === 'chat' && styles.tabButtonActive]}
+            onPress={() => setTab('chat')}
+            accessibilityRole="button"
+            accessibilityLabel="Ver chat del grupo"
+          >
+            <Text style={[styles.tabText, tab === 'chat' && styles.tabTextActive]}>Chat</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, tab === 'members' && styles.tabButtonActive]}
+            onPress={() => setTab('members')}
+            accessibilityRole="button"
+            accessibilityLabel="Ver miembros del grupo"
+          >
+            <Text style={[styles.tabText, tab === 'members' && styles.tabTextActive]}>Miembros ({members.length})</Text>
+          </TouchableOpacity>
         </View>
-      )}
-
-      {isOwner && !pickerOpen && (
-        <Hoverable scaleTo={1.01}>
-          {({ hovered }) => (
-            <TouchableOpacity
-              style={[styles.newGroupButton, hovered && styles.newGroupButtonHovered]}
-              onPress={openPicker}
-              accessibilityRole="button"
-              accessibilityLabel="Agregar miembro"
-            >
-              <Ionicons name="person-add-outline" size={18} color={colors.primary} />
-              <Text style={styles.newGroupText}>Agregar miembro</Text>
-            </TouchableOpacity>
-          )}
-        </Hoverable>
-      )}
-
-      <View style={styles.list}>
-        {members.map((m) => (
-          <Hoverable key={m.id} scaleTo={1.01}>
-            {({ hovered }) => (
-              <View style={[styles.row, hovered && styles.rowHovered]}>
-                <LinearGradient
-                  colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.avatarRing}
-                >
-                  <Avatar uri={m.avatar_url} label={(m.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
-                </LinearGradient>
-                <View style={styles.rowTextCol}>
-                  <Text style={styles.rowLabel}>{m.username}<Text style={styles.rowTag}>#{m.tag}</Text>{m.id === myId ? ' (tú)' : ''}</Text>
-                  {!!m.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(m.created_at)}</Text>}
-                </View>
-                {(isOwner || m.id === myId) && (
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={() => handleRemoveMember(m)}
-                    disabled={busyId === m.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={m.id === myId ? 'Salir del grupo' : `Quitar a ${m.username}#${m.tag}`}
-                  >
-                    <Ionicons name={m.id === myId ? 'exit-outline' : 'person-remove-outline'} size={17} color={colors.textFaint} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </Hoverable>
-        ))}
       </View>
 
-      {isOwner && (
-        <TouchableOpacity style={styles.deleteLink} onPress={handleDeleteGroup} accessibilityRole="button" accessibilityLabel="Eliminar grupo">
-          <Text style={styles.deleteLinkText}>Eliminar grupo</Text>
-        </TouchableOpacity>
+      {tab === 'chat' ? (
+        <ChatView filterColumn="group_id" filterValue={groupId} participantsById={membersById} showSenderName />
+      ) : (
+        <ScrollView contentContainerStyle={styles.container}>
+          {pickerOpen && (
+            <View style={styles.pickerCard}>
+              <View style={styles.pickerHeader}>
+                <Text style={styles.pickerTitle}>Agregar de tus amigos</Text>
+                <TouchableOpacity onPress={() => setPickerOpen(false)} accessibilityRole="button" accessibilityLabel="Cerrar">
+                  <Ionicons name="close" size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+              {candidates.length === 0 ? (
+                <Text style={styles.emptyHint}>No queda nadie para agregar.</Text>
+              ) : (
+                candidates.map((c) => (
+                  <View key={c.id} style={styles.pickerRow}>
+                    <Text style={styles.rowLabel}>{c.username}<Text style={styles.rowTag}>#{c.tag}</Text></Text>
+                    <TouchableOpacity
+                      style={styles.addButton}
+                      onPress={() => addMember(c)}
+                      disabled={busyId === c.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Agregar a ${c.username}#${c.tag}`}
+                    >
+                      {busyId === c.id ? <ActivityIndicator size="small" color={colors.background} /> : <Text style={styles.addButtonText}>Agregar</Text>}
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+
+          {isOwner && !pickerOpen && (
+            <Hoverable scaleTo={1.01}>
+              {({ hovered }) => (
+                <TouchableOpacity
+                  style={[styles.newGroupButton, hovered && styles.newGroupButtonHovered]}
+                  onPress={openPicker}
+                  accessibilityRole="button"
+                  accessibilityLabel="Agregar miembro"
+                >
+                  <Ionicons name="person-add-outline" size={18} color={colors.primary} />
+                  <Text style={styles.newGroupText}>Agregar miembro</Text>
+                </TouchableOpacity>
+              )}
+            </Hoverable>
+          )}
+
+          <View style={styles.list}>
+            {members.map((m) => (
+              <Hoverable key={m.id} scaleTo={1.01}>
+                {({ hovered }) => (
+                  <View style={[styles.row, hovered && styles.rowHovered]}>
+                    <LinearGradient
+                      colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.avatarRing}
+                    >
+                      <Avatar uri={m.avatar_url} label={(m.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
+                    </LinearGradient>
+                    <View style={styles.rowTextCol}>
+                      <Text style={styles.rowLabel}>{m.username}<Text style={styles.rowTag}>#{m.tag}</Text>{m.id === myId ? ' (tú)' : ''}</Text>
+                      {!!m.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(m.created_at)}</Text>}
+                    </View>
+                    {(isOwner || m.id === myId) && (
+                      <TouchableOpacity
+                        style={styles.iconButton}
+                        onPress={() => handleRemoveMember(m)}
+                        disabled={busyId === m.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={m.id === myId ? 'Salir del grupo' : `Quitar a ${m.username}#${m.tag}`}
+                      >
+                        <Ionicons name={m.id === myId ? 'exit-outline' : 'person-remove-outline'} size={17} color={colors.textFaint} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </Hoverable>
+            ))}
+          </View>
+
+          {isOwner && (
+            <TouchableOpacity style={styles.deleteLink} onPress={handleDeleteGroup} accessibilityRole="button" accessibilityLabel="Eliminar grupo">
+              <Text style={styles.deleteLinkText}>Eliminar grupo</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
+  flex: { flex: 1, backgroundColor: colors.background },
+  container: { padding: 20, paddingTop: 4, flexGrow: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+
+  headerArea: { padding: 20, paddingBottom: 0 },
+  tabRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  tabButton: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceMuted,
+  },
+  tabButtonActive: { backgroundColor: colors.primary },
+  tabText: { fontSize: 13.5, fontWeight: '700', color: colors.textMuted },
+  tabTextActive: { color: colors.background },
 
   newGroupButton: {
     flexDirection: 'row',
