@@ -49,7 +49,7 @@ function CalculationAttachment({ attachment, mine, colors, styles }) {
           {attachment.label || 'Gasto energético'}
         </Text>
       </View>
-      <Text style={[styles.attachSub, mine && styles.attachSubMine]}>{attachment.activity_label}</Text>
+      <Text style={[styles.attachSub, mine && styles.attachSubMine]}>{attachment.activity_label} · {attachment.formula_label || 'Mifflin-St Jeor'}</Text>
       <View style={styles.macroRow}>
         <Text style={[styles.macroText, mine && styles.attachSubMine]}>TMB {fmt(attachment.tmb)} kcal</Text>
         <Text style={[styles.macroText, mine && styles.attachSubMine]}>GET {fmt(attachment.get)} kcal</Text>
@@ -276,6 +276,7 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
       attachment: {
         label: calc.label,
         activity_label: calc.activity_label,
+        formula_label: calc.formula_label,
         tmb: calc.tmb,
         get: calc.get,
       },

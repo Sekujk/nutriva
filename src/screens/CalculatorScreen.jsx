@@ -15,6 +15,50 @@ const ACTIVITY_FACTORS = [
   { key: 'muyIntenso', label: 'Muy intenso', value: 1.9 },
 ];
 
+const schofieldBracket = (a) => {
+  if (a < 30) return { men: [15.057, 692.2], women: [14.818, 486.6], label: '18–30 años' };
+  if (a < 60) return { men: [11.472, 873.1], women: [8.126, 845.6], label: '30–60 años' };
+  return { men: [11.711, 587.7], women: [9.082, 658.5], label: '60+ años' };
+};
+
+const TMB_FORMULAS = [
+  {
+    key: 'mifflin',
+    label: 'Mifflin-St Jeor',
+    compute: (sex, w, h, a) => (sex === 'M' ? 10 * w + 6.25 * h - 5 * a + 5 : 10 * w + 6.25 * h - 5 * a - 161),
+    formula: (sex, w, h, a) => (sex === 'M'
+      ? `10×${w} + 6.25×${h} − 5×${a} + 5`
+      : `10×${w} + 6.25×${h} − 5×${a} − 161`),
+  },
+  {
+    key: 'harrisBenedict',
+    label: 'Harris-Benedict',
+    compute: (sex, w, h, a) => (sex === 'M'
+      ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * a
+      : 447.593 + 9.247 * w + 3.098 * h - 4.330 * a),
+    formula: (sex, w, h, a) => (sex === 'M'
+      ? `88.362 + 13.397×${w} + 4.799×${h} − 5.677×${a}`
+      : `447.593 + 9.247×${w} + 3.098×${h} − 4.330×${a}`),
+  },
+  {
+    key: 'schofield',
+    label: 'Schofield (OMS/FAO)',
+    note: 'Válida para 18 años o más.',
+    compute: (sex, w, h, a) => {
+      if (a < 18) return null;
+      const { men, women } = schofieldBracket(a);
+      const [coefA, coefB] = sex === 'M' ? men : women;
+      return coefA * w + coefB;
+    },
+    formula: (sex, w, h, a) => {
+      if (a < 18) return 'Válida para 18 años o más';
+      const { men, women, label } = schofieldBracket(a);
+      const [coefA, coefB] = sex === 'M' ? men : women;
+      return `${coefA}×${w} + ${coefB} (${label})`;
+    },
+  },
+];
+
 const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
   return Number.isFinite(n) ? n : null;
@@ -70,6 +114,7 @@ export default function CalculatorScreen() {
   const [height, setHeight] = useState('');
   const [age, setAge] = useState('');
   const [activityKey, setActivityKey] = useState('moderado');
+  const [formulaKey, setFormulaKey] = useState('mifflin');
   const [tmbOverride, setTmbOverride] = useState(null);
   const [getOverride, setGetOverride] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -78,9 +123,10 @@ export default function CalculatorScreen() {
   const h = parseNum(height);
   const a = parseInt(age, 10);
   const activity = ACTIVITY_FACTORS.find((f) => f.key === activityKey);
+  const formula = TMB_FORMULAS.find((f) => f.key === formulaKey);
 
   const hasInputs = w > 0 && h > 0 && a > 0;
-  const autoTmb = hasInputs ? (sex === 'M' ? 10 * w + 6.25 * h - 5 * a + 5 : 10 * w + 6.25 * h - 5 * a - 161) : null;
+  const autoTmb = hasInputs ? formula.compute(sex, w, h, a) : null;
   const tmb = tmbOverride !== null && tmbOverride !== '' ? parseNum(tmbOverride) : autoTmb;
 
   const autoGet = tmb !== null ? tmb * activity.value : null;
@@ -99,6 +145,8 @@ export default function CalculatorScreen() {
         activity_key: activityKey,
         activity_label: activity.label,
         activity_factor: activity.value,
+        formula_key: formulaKey,
+        formula_label: formula.label,
         tmb,
         get,
       });
@@ -169,6 +217,27 @@ export default function CalculatorScreen() {
         </View>
       </View>
 
+      <Text style={styles.label}>Fórmula de TMB</Text>
+      <View style={styles.activityWrap}>
+        {TMB_FORMULAS.map((f) => (
+          <TouchableOpacity
+            key={f.key}
+            style={[styles.activityChip, formulaKey === f.key && styles.activityChipActive]}
+            onPress={() => setFormulaKey(f.key)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: formulaKey === f.key }}
+            accessibilityLabel={f.label}
+          >
+            <Text style={[styles.activityChipText, formulaKey === f.key && styles.activityChipTextActive]}>
+              {f.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {!!formula.note && hasInputs && a < 18 && (
+        <Text style={styles.formulaNote}>{formula.note}</Text>
+      )}
+
       <Text style={styles.label}>Factor de actividad</Text>
       <View style={styles.activityWrap}>
         {ACTIVITY_FACTORS.map((f) => (
@@ -202,10 +271,8 @@ export default function CalculatorScreen() {
         <View style={styles.resultCard}>
           <EditableResultRow
             icon="flame"
-            label="TMB (Mifflin-St Jeor)"
-            formula={sex === 'M'
-              ? `10×${w} + 6.25×${h} − 5×${a} + 5`
-              : `10×${w} + 6.25×${h} − 5×${a} − 161`}
+            label={`TMB (${formula.label})`}
+            formula={formula.formula(sex, w, h, a)}
             value={autoTmb}
             unit="kcal/día"
             override={tmbOverride}
@@ -346,6 +413,7 @@ const getStyles = (colors) => StyleSheet.create({
   activityChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   activityChipText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   activityChipTextActive: { color: colors.background },
+  formulaNote: { fontSize: 11.5, color: colors.warning, marginTop: -4, marginBottom: 14 },
   resultCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,

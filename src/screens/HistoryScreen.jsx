@@ -113,7 +113,7 @@ export default function HistoryScreen() {
 
           <View style={styles.cardResults}>
             <View style={styles.cardResultCol}>
-              <Text style={styles.cardResultLabel}>TMB</Text>
+              <Text style={styles.cardResultLabel}>TMB · {item.formula_label || 'Mifflin-St Jeor'}</Text>
               <Text style={styles.cardResultValue}>{Math.round(item.tmb)} kcal</Text>
             </View>
             <View style={styles.cardResultCol}>
