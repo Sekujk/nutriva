@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../config/supabase';
@@ -37,6 +37,8 @@ const copyToClipboard = async (text) => {
 function Tag({ tag, style }) {
   return <Text style={style}>#{tag}</Text>;
 }
+
+const APP_URL = 'https://sekujk.github.io/nutriva/';
 
 export default function FriendsScreen({ onOpenGroups }) {
   const { session } = useAuth();
@@ -187,6 +189,32 @@ export default function FriendsScreen({ onOpenGroups }) {
     });
   };
 
+  const handleShareApp = async () => {
+    const message = `Únete a Nutriva conmigo: ${APP_URL}`;
+    if (Platform.OS === 'web') {
+      if (navigator?.share) {
+        try {
+          await navigator.share({ title: 'Nutriva', text: 'Únete a Nutriva conmigo', url: APP_URL });
+        } catch {
+          // el usuario cerró el diálogo de compartir, no hay nada que hacer
+        }
+        return;
+      }
+      const copied = await copyToClipboard(message);
+      notify({
+        title: copied ? 'Enlace copiado' : 'Comparte este enlace',
+        message: copied ? 'Pégalo donde quieras para invitar a alguien.' : message,
+        variant: 'success',
+      });
+      return;
+    }
+    try {
+      await Share.share({ message });
+    } catch {
+      // el usuario cerró el diálogo nativo de compartir
+    }
+  };
+
   const handleCopyHandle = async () => {
     if (!myHandle) return;
     const copied = Platform.OS === 'web' ? await copyToClipboard(myHandle) : false;
@@ -224,6 +252,20 @@ export default function FriendsScreen({ onOpenGroups }) {
           </TouchableOpacity>
         </LinearGradient>
       )}
+
+      <Hoverable scaleTo={1.01}>
+        {({ hovered }) => (
+          <TouchableOpacity
+            style={[styles.shareRow, hovered && styles.shareRowHovered]}
+            onPress={handleShareApp}
+            accessibilityRole="button"
+            accessibilityLabel="Invitar a un amigo a Nutriva"
+          >
+            <Ionicons name="share-social-outline" size={18} color={colors.primary} />
+            <Text style={styles.shareText}>Invitar a un amigo a Nutriva</Text>
+          </TouchableOpacity>
+        )}
+      </Hoverable>
 
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={19} color={colors.textMuted} style={styles.searchIcon} />
@@ -451,6 +493,21 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  shareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 46,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+    marginBottom: 16,
+  },
+  shareRowHovered: { backgroundColor: colors.primarySoft },
+  shareText: { color: colors.primary, fontSize: 14, fontWeight: '700' },
 
   searchWrapper: { justifyContent: 'center', marginBottom: 16 },
   searchIcon: { position: 'absolute', left: 14, zIndex: 1 },

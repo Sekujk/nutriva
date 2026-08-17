@@ -29,6 +29,7 @@ const MENU_SECTIONS = [
     label: 'Ayuda',
     items: [
       { key: 'faq', icon: 'help-circle-outline', label: 'Preguntas frecuentes', body: 'Dudas comunes sobre Nutriva' },
+      { key: 'sugerencias', icon: 'bulb-outline', label: 'Sugerencias', body: 'Cuéntanos qué falta o qué mejorar' },
       { key: 'sobre', icon: 'sparkles-outline', label: 'Sobre la app', body: 'Versión, código y agradecimientos' },
     ],
   },

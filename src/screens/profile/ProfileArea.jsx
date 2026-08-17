@@ -6,6 +6,7 @@ import SettingsScreen from './SettingsScreen';
 import AppearanceScreen from './AppearanceScreen';
 import FaqScreen from './FaqScreen';
 import AboutScreen from './AboutScreen';
+import SuggestionsScreen from './SuggestionsScreen';
 import useResponsive from '../../hooks/useResponsive';
 
 const SUB_SCREENS = {
@@ -14,6 +15,7 @@ const SUB_SCREENS = {
   apariencia: AppearanceScreen,
   faq: FaqScreen,
   sobre: AboutScreen,
+  sugerencias: SuggestionsScreen,
 };
 
 export default function ProfileArea() {
