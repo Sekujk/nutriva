@@ -1,15 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useCountry } from '../../context/CountryContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { FONT_DISPLAY } from '../../theme/typography';
+import Avatar from '../../components/Avatar';
 import foodsPeru from '../../data/foodsPeru';
 import foodsGuatemala from '../../data/foodsGuatemala';
 
 const DATASETS = { PE: foodsPeru, GT: foodsGuatemala };
+const TYPING_BROADCAST_THROTTLE_MS = 1500;
+const TYPING_EXPIRE_MS = 3000;
 
 function fmt(n) {
   return Number.isFinite(n) ? (Number.isInteger(n) ? n : n.toFixed(1)) : 'N/D';
@@ -55,6 +58,104 @@ function CalculationAttachment({ attachment, mine, colors, styles }) {
   );
 }
 
+function MessageBubble({ message, mine, sender, showSenderName, colors, styles }) {
+  const entrance = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(entrance, { toValue: 1, friction: 8, tension: 90, useNativeDriver: true }).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.messageRow,
+        mine && styles.messageRowMine,
+        {
+          opacity: entrance,
+          transform: [
+            { translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+            { scale: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) },
+          ],
+        },
+      ]}
+    >
+      <View style={[styles.bubble, mine && styles.bubbleMine]}>
+        {showSenderName && !mine && !!sender?.username && (
+          <Text style={styles.senderName}>{sender.username}</Text>
+        )}
+        {!!message.text && <Text style={[styles.bubbleText, mine && styles.bubbleTextMine]}>{message.text}</Text>}
+        {message.attachment_kind === 'food' && (
+          <FoodAttachment attachment={message.attachment} mine={mine} colors={colors} styles={styles} />
+        )}
+        {message.attachment_kind === 'calculation' && (
+          <CalculationAttachment attachment={message.attachment} mine={mine} colors={colors} styles={styles} />
+        )}
+        <Text style={[styles.time, mine && styles.timeMine]}>{formatTime(message.created_at)}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+function TypingDots({ color }) {
+  const dots = useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    const loops = dots.map((dot, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 140),
+          Animated.timing(dot, { toValue: 1, duration: 320, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 320, useNativeDriver: true }),
+          Animated.delay((2 - i) * 140),
+        ]),
+      ),
+    );
+    loops.forEach((loop) => loop.start());
+    return () => loops.forEach((loop) => loop.stop());
+  }, []);
+
+  return (
+    <View style={{ flexDirection: 'row', gap: 3 }}>
+      {dots.map((dot, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            width: 5,
+            height: 5,
+            borderRadius: 3,
+            backgroundColor: color,
+            opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] }),
+            transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }],
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+function TypingIndicator({ typists, colors, styles }) {
+  const entrance = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(entrance, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+  }, [typists.length]);
+
+  if (typists.length === 0) return null;
+
+  return (
+    <Animated.View style={[styles.typingRow, { opacity: entrance }]}>
+      <View style={styles.typingAvatars}>
+        {typists.slice(0, 3).map((t) => (
+          <Avatar key={t.id} uri={t.avatar_url} label={(t.username?.[0] || '?').toUpperCase()} size={22} fontSize={10} style={styles.typingAvatar} />
+        ))}
+      </View>
+      <View style={styles.typingBubble}>
+        <TypingDots color={colors.textFaint} />
+      </View>
+    </Animated.View>
+  );
+}
+
 export default function ChatView({ filterColumn, filterValue, participantsById, showSenderName }) {
   const { session } = useAuth();
   const { country } = useCountry();
@@ -62,11 +163,15 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
   const styles = useMemo(() => getStyles(colors), [colors]);
   const myId = session?.user?.id;
   const scrollRef = useRef(null);
+  const channelRef = useRef(null);
+  const lastTypingSentAtRef = useRef(0);
+  const typingTimeoutsRef = useRef({});
 
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [typingIds, setTypingIds] = useState([]);
 
   const [mode, setMode] = useState('text');
   const [foodQuery, setFoodQuery] = useState('');
@@ -99,19 +204,31 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
           setMessages((prev) => (prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]));
         },
       )
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (!payload?.userId || payload.userId === myId) return;
+        const id = payload.userId;
+        clearTimeout(typingTimeoutsRef.current[id]);
+        setTypingIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+        typingTimeoutsRef.current[id] = setTimeout(() => {
+          setTypingIds((prev) => prev.filter((existing) => existing !== id));
+        }, TYPING_EXPIRE_MS);
+      })
       .subscribe();
+
+    channelRef.current = channel;
 
     return () => {
       cancelled = true;
+      Object.values(typingTimeoutsRef.current).forEach(clearTimeout);
       supabase.removeChannel(channel);
     };
-  }, [filterColumn, filterValue]);
+  }, [filterColumn, filterValue, myId]);
 
   useEffect(() => {
     if (!loading) {
       requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
     }
-  }, [messages.length, loading]);
+  }, [messages.length, typingIds.length, loading]);
 
   const insertMessage = async (payload) => {
     const { data, error } = await supabase
@@ -123,6 +240,15 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
       setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]));
     }
     return error;
+  };
+
+  const handleTextChange = (value) => {
+    setText(value);
+    if (!value.trim() || !channelRef.current) return;
+    const now = Date.now();
+    if (now - lastTypingSentAtRef.current < TYPING_BROADCAST_THROTTLE_MS) return;
+    lastTypingSentAtRef.current = now;
+    channelRef.current.send({ type: 'broadcast', event: 'typing', payload: { userId: myId } });
   };
 
   const sendText = async () => {
@@ -194,28 +320,23 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
             <Text style={styles.emptyText}>Todavía no hay mensajes. Escribe el primero.</Text>
           </View>
         ) : (
-          messages.map((m) => {
-            const mine = m.sender_id === myId;
-            const sender = participantsById?.[m.sender_id];
-            return (
-              <View key={m.id} style={[styles.messageRow, mine && styles.messageRowMine]}>
-                <View style={[styles.bubble, mine && styles.bubbleMine]}>
-                  {showSenderName && !mine && !!sender?.username && (
-                    <Text style={styles.senderName}>{sender.username}</Text>
-                  )}
-                  {!!m.text && <Text style={[styles.bubbleText, mine && styles.bubbleTextMine]}>{m.text}</Text>}
-                  {m.attachment_kind === 'food' && (
-                    <FoodAttachment attachment={m.attachment} mine={mine} colors={colors} styles={styles} />
-                  )}
-                  {m.attachment_kind === 'calculation' && (
-                    <CalculationAttachment attachment={m.attachment} mine={mine} colors={colors} styles={styles} />
-                  )}
-                  <Text style={[styles.time, mine && styles.timeMine]}>{formatTime(m.created_at)}</Text>
-                </View>
-              </View>
-            );
-          })
+          messages.map((m) => (
+            <MessageBubble
+              key={m.id}
+              message={m}
+              mine={m.sender_id === myId}
+              sender={participantsById?.[m.sender_id]}
+              showSenderName={showSenderName}
+              colors={colors}
+              styles={styles}
+            />
+          ))
         )}
+        <TypingIndicator
+          typists={typingIds.map((id) => participantsById?.[id]).filter(Boolean)}
+          colors={colors}
+          styles={styles}
+        />
       </ScrollView>
 
       {mode === 'attach-menu' && (
@@ -300,7 +421,7 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
             placeholder="Escribe un mensaje..."
             placeholderTextColor={colors.placeholder}
             value={text}
-            onChangeText={setText}
+            onChangeText={handleTextChange}
             multiline
             accessibilityLabel="Escribir mensaje"
           />
@@ -347,6 +468,17 @@ const getStyles = (colors) => StyleSheet.create({
   bubbleTextMine: { color: colors.background },
   time: { fontSize: 9.5, color: colors.textFaint, marginTop: 4, alignSelf: 'flex-end' },
   timeMine: { color: colors.background, opacity: 0.75 },
+
+  typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  typingAvatars: { flexDirection: 'row' },
+  typingAvatar: { marginRight: -8, borderWidth: 2, borderColor: colors.background },
+  typingBubble: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginLeft: 6,
+  },
 
   attachCard: {
     backgroundColor: colors.surface,
