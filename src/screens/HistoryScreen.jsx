@@ -1,25 +1,123 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppAlert } from '../context/AppAlertContext';
 import { supabase } from '../config/supabase';
+import { lighten } from '../utils/color';
+import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
+import Hoverable from '../components/Hoverable';
+import useResponsive from '../hooks/useResponsive';
 
-const MONTHS = [
+const MONTHS_SHORT = [
   'ene', 'feb', 'mar', 'abr', 'may', 'jun',
   'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
 ];
 
+const MONTHS_FULL = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+
 const formatDate = (iso) => {
   const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
 };
+
+const monthGroupKey = (iso) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}`;
+};
+
+const monthGroupLabel = (iso) => {
+  const d = new Date(iso);
+  const label = `${MONTHS_FULL[d.getMonth()]} ${d.getFullYear()}`;
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+function HistoryCard({ item, index, deleting, onDelete, colors, styles }) {
+  const entrance = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: 280,
+      delay: Math.min(index, 6) * 45,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: entrance,
+        transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
+      }}
+    >
+      <Hoverable scaleTo={1.008}>
+        {({ hovered }) => (
+          <View style={[styles.card, hovered && styles.cardHovered]}>
+            <View style={styles.cardHeader}>
+              <LinearGradient
+                colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.cardIcon}
+              >
+                <Ionicons name={item.sex === 'M' ? 'male' : 'female'} size={16} color={colors.primary} />
+              </LinearGradient>
+              <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => onDelete(item)}
+                disabled={deleting}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Eliminar caso"
+              >
+                {deleting ? (
+                  <ActivityIndicator size="small" color={colors.danger} />
+                ) : (
+                  <Ionicons name="trash-outline" size={17} color={colors.danger} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.cardMeta}>
+              {item.weight} kg · {item.height} cm · {item.age} años · {item.activity_label}
+            </Text>
+
+            <View style={styles.formulaPill}>
+              <Text style={styles.formulaPillText}>{item.formula_label || 'Mifflin-St Jeor'}</Text>
+            </View>
+
+            <View style={styles.cardResults}>
+              <View style={styles.cardResultCol}>
+                <Text style={styles.cardResultLabel}>TMB</Text>
+                <Text style={styles.cardResultValue}>{Math.round(item.tmb)}</Text>
+                <Text style={styles.cardResultUnit}>kcal/día</Text>
+              </View>
+              <View style={styles.resultDivider} />
+              <View style={styles.cardResultCol}>
+                <Text style={styles.cardResultLabel}>GET</Text>
+                <Text style={styles.cardResultValue}>{Math.round(item.get)}</Text>
+                <Text style={styles.cardResultUnit}>kcal/día</Text>
+              </View>
+            </View>
+          </View>
+        )}
+      </Hoverable>
+    </Animated.View>
+  );
+}
 
 export default function HistoryScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const { confirm, notify } = useAppAlert();
+  const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [loading, setLoading] = useState(true);
@@ -39,6 +137,16 @@ export default function HistoryScreen() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  const groups = useMemo(() => {
+    const map = new Map();
+    items.forEach((item) => {
+      const key = monthGroupKey(item.created_at);
+      if (!map.has(key)) map.set(key, { label: monthGroupLabel(item.created_at), items: [] });
+      map.get(key).items.push(item);
+    });
+    return [...map.values()];
+  }, [items]);
 
   const handleDelete = (item) => {
     confirm({
@@ -82,53 +190,41 @@ export default function HistoryScreen() {
     );
   }
 
+  let runningIndex = 0;
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {items.map((item) => (
-        <View key={item.id} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardIcon}>
-              <Ionicons name={item.sex === 'M' ? 'male' : 'female'} size={16} color={colors.primary} />
-            </View>
-            <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDelete(item)}
-              disabled={deletingId === item.id}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Eliminar caso"
-            >
-              {deletingId === item.id ? (
-                <ActivityIndicator size="small" color={colors.danger} />
-              ) : (
-                <Ionicons name="trash-outline" size={17} color={colors.danger} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.cardMeta}>
-            {item.weight} kg · {item.height} cm · {item.age} años · {item.activity_label}
-          </Text>
-
-          <View style={styles.cardResults}>
-            <View style={styles.cardResultCol}>
-              <Text style={styles.cardResultLabel}>TMB · {item.formula_label || 'Mifflin-St Jeor'}</Text>
-              <Text style={styles.cardResultValue}>{Math.round(item.tmb)} kcal</Text>
-            </View>
-            <View style={styles.cardResultCol}>
-              <Text style={styles.cardResultLabel}>GET</Text>
-              <Text style={styles.cardResultValue}>{Math.round(item.get)} kcal</Text>
+      <View style={isDesktop ? styles.desktopWrap : null}>
+        {groups.map((group) => (
+          <View key={group.label} style={styles.group}>
+            <Text style={styles.monthLabel}>{group.label}</Text>
+            <View style={styles.list}>
+              {group.items.map((item) => {
+                const cardIndex = runningIndex;
+                runningIndex += 1;
+                return (
+                  <HistoryCard
+                    key={item.id}
+                    item={item}
+                    index={cardIndex}
+                    deleting={deletingId === item.id}
+                    onDelete={handleDelete}
+                    colors={colors}
+                    styles={styles}
+                  />
+                );
+              })}
             </View>
           </View>
-        </View>
-      ))}
+        ))}
+      </View>
     </ScrollView>
   );
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1, gap: 12 },
+  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
+  desktopWrap: { width: '100%', maxWidth: 640, alignSelf: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14, backgroundColor: colors.background },
   iconBadge: {
     width: 72,
@@ -139,8 +235,20 @@ const getStyles = (colors) => StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
   },
-  title: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  title: { fontSize: 18, fontFamily: FONT_DISPLAY, color: colors.text, textAlign: 'center' },
   body: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
+
+  group: { marginBottom: 22 },
+  monthLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  list: { gap: 12 },
 
   card: {
     backgroundColor: colors.surface,
@@ -151,27 +259,43 @@ const getStyles = (colors) => StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
+  cardHovered: { borderColor: colors.primary, shadowOpacity: 0.12 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.primarySoft,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardDate: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.text },
+  cardDate: { flex: 1, fontSize: 14.5, fontFamily: FONT_DISPLAY, color: colors.text },
   deleteButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  cardMeta: { fontSize: 12.5, color: colors.textMuted, marginTop: 8 },
-  cardResults: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  cardResultCol: {
-    flex: 1,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
+  cardMeta: { fontSize: 12.5, color: colors.textMuted, marginTop: 10 },
+
+  formulaPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primarySoft,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginTop: 8,
   },
-  cardResultLabel: { fontSize: 11, color: colors.textFaint, fontWeight: '700', textTransform: 'uppercase' },
-  cardResultValue: { fontSize: 16, fontWeight: '800', color: colors.primary, marginTop: 2 },
+  formulaPillText: { fontSize: 11, fontWeight: '700', color: colors.primary },
+
+  cardResults: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 14,
+    marginTop: 14,
+    paddingVertical: 12,
+  },
+  cardResultCol: { flex: 1, alignItems: 'center' },
+  resultDivider: { width: 1, alignSelf: 'stretch', backgroundColor: colors.border },
+  cardResultLabel: { fontSize: 10.5, color: colors.textFaint, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+  cardResultValue: { fontSize: 20, fontFamily: FONT_DISPLAY_BOLD, color: colors.primary, marginTop: 3 },
+  cardResultUnit: { fontSize: 10, color: colors.textFaint, marginTop: 1 },
 });
