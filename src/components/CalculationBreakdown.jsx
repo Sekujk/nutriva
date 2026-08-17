@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import { getFormula } from '../data/tmbFormulas';
+import useResponsive from '../hooks/useResponsive';
 
 function fmt(n) {
   return Number.isFinite(n) ? Math.round(n) : '—';
@@ -58,23 +59,28 @@ const SEX_LABEL = { M: 'Hombre', F: 'Mujer' };
 
 export default function CalculationBreakdown({ visible, onClose, calc }) {
   const { colors } = useTheme();
+  const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetY = useRef(new Animated.Value(40)).current;
+  const sheetScale = useRef(new Animated.Value(0.95)).current;
   const sheetOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) return;
     overlayOpacity.setValue(0);
     sheetY.setValue(40);
+    sheetScale.setValue(0.95);
     sheetOpacity.setValue(0);
     Animated.parallel([
       Animated.timing(overlayOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
       Animated.timing(sheetOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
-      Animated.spring(sheetY, { toValue: 0, useNativeDriver: true, friction: 9, tension: 90 }),
+      isDesktop
+        ? Animated.spring(sheetScale, { toValue: 1, useNativeDriver: true, friction: 9, tension: 90 })
+        : Animated.spring(sheetY, { toValue: 0, useNativeDriver: true, friction: 9, tension: 90 }),
     ]).start();
-  }, [visible]);
+  }, [visible, isDesktop]);
 
   if (!visible || !calc) return null;
 
@@ -94,9 +100,18 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
-      <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
+      <Animated.View style={[styles.overlay, isDesktop && styles.overlayDesktop, { opacity: overlayOpacity }]}>
         <Pressable style={styles.overlayPress} onPress={onClose} />
-        <Animated.View style={[styles.sheet, { opacity: sheetOpacity, transform: [{ translateY: sheetY }] }]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            isDesktop && styles.sheetDesktop,
+            {
+              opacity: sheetOpacity,
+              transform: isDesktop ? [{ scale: sheetScale }] : [{ translateY: sheetY }],
+            },
+          ]}
+        >
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Cómo se calculó</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar">
@@ -178,12 +193,24 @@ const getStyles = (colors) => StyleSheet.create({
     justifyContent: 'flex-end',
   },
   overlayPress: { ...StyleSheet.absoluteFillObject },
+  overlayDesktop: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   sheet: {
     backgroundColor: colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '85%',
     paddingTop: 8,
+  },
+  sheetDesktop: {
+    width: '100%',
+    maxWidth: 480,
+    borderRadius: 24,
+    maxHeight: '80%',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.2,
+    shadowRadius: 40,
+    elevation: 8,
   },
   header: {
     flexDirection: 'row',
