@@ -108,7 +108,7 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
       title: isMe ? 'Salir del grupo' : 'Quitar del grupo',
       message: isMe
         ? `Vas a salir de "${group?.name}".`
-        : `${member.username} ya no va a ver a los demás miembros de "${group?.name}".`,
+        : `${member.username}#${member.tag} ya no va a ver a los demás miembros de "${group?.name}".`,
       confirmText: isMe ? 'Salir' : 'Quitar',
       cancelText: 'Cancelar',
       destructive: true,
@@ -158,13 +158,13 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
           ) : (
             candidates.map((c) => (
               <View key={c.id} style={styles.pickerRow}>
-                <Text style={styles.rowLabel}>{c.username}</Text>
+                <Text style={styles.rowLabel}>{c.username}<Text style={styles.rowTag}>#{c.tag}</Text></Text>
                 <TouchableOpacity
                   style={styles.addButton}
                   onPress={() => addMember(c)}
                   disabled={busyId === c.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Agregar a ${c.username}`}
+                  accessibilityLabel={`Agregar a ${c.username}#${c.tag}`}
                 >
                   {busyId === c.id ? <ActivityIndicator size="small" color={colors.background} /> : <Text style={styles.addButtonText}>Agregar</Text>}
                 </TouchableOpacity>
@@ -204,7 +204,7 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
                   <Avatar uri={m.avatar_url} label={(m.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
                 </LinearGradient>
                 <View style={styles.rowTextCol}>
-                  <Text style={styles.rowLabel}>{m.username}{m.id === myId ? ' (tú)' : ''}</Text>
+                  <Text style={styles.rowLabel}>{m.username}<Text style={styles.rowTag}>#{m.tag}</Text>{m.id === myId ? ' (tú)' : ''}</Text>
                   {!!m.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(m.created_at)}</Text>}
                 </View>
                 {(isOwner || m.id === myId) && (
@@ -213,7 +213,7 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
                     onPress={() => handleRemoveMember(m)}
                     disabled={busyId === m.id}
                     accessibilityRole="button"
-                    accessibilityLabel={m.id === myId ? 'Salir del grupo' : `Quitar a ${m.username}`}
+                    accessibilityLabel={m.id === myId ? 'Salir del grupo' : `Quitar a ${m.username}#${m.tag}`}
                   >
                     <Ionicons name={m.id === myId ? 'exit-outline' : 'person-remove-outline'} size={17} color={colors.textFaint} />
                   </TouchableOpacity>
@@ -279,6 +279,7 @@ const getStyles = (colors) => StyleSheet.create({
   avatarRing: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   rowTextCol: { flex: 1 },
   rowLabel: { fontSize: 14.5, fontWeight: '700', color: colors.text },
+  rowTag: { fontSize: 12, fontWeight: '600', color: colors.textFaint },
   rowSub: { fontSize: 11.5, color: colors.textFaint, marginTop: 2 },
 
   addButton: { minHeight: 34, minWidth: 76, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
