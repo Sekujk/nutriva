@@ -20,7 +20,6 @@ const MENU_SECTIONS = [
   {
     label: 'Cuenta',
     items: [
-      { key: 'perfil', icon: 'person-outline', label: 'Perfil', body: 'Tu nombre, foto y fecha de nacimiento' },
       { key: 'configuracion', icon: 'earth-outline', label: 'País', body: 'Tabla de composición de alimentos' },
       { key: 'apariencia', icon: 'color-palette-outline', label: 'Apariencia', body: 'Modo claro/oscuro y color de la app' },
     ],
