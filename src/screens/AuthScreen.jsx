@@ -11,6 +11,7 @@ import { useAppAlert } from '../context/AppAlertContext';
 import Hoverable from '../components/Hoverable';
 import HeroBadge from '../components/HeroBadge';
 import Captcha from '../components/Captcha';
+import TermsModal from '../components/TermsModal';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
 import useResponsive from '../hooks/useResponsive';
 import { darken } from '../utils/color';
@@ -32,6 +33,9 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [studyOptIn, setStudyOptIn] = useState(false);
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
 
   const passwordRef = useRef(null);
   const captchaRef = useRef(null);
@@ -82,11 +86,15 @@ export default function AuthScreen() {
       notify({ title: 'Faltan datos', message: 'Ingresa email y contraseña', variant: 'warning' });
       return;
     }
+    if (isSignUp && !acceptedTerms) {
+      notify({ title: 'Falta un paso', message: 'Acepta los términos y condiciones para crear tu cuenta.', variant: 'warning' });
+      return;
+    }
     setLoading(true);
     try {
       const captchaToken = await getCaptchaToken();
       if (isSignUp) {
-        const { requiresEmailConfirmation } = await signUp(email, password, captchaToken);
+        const { requiresEmailConfirmation } = await signUp(email, password, captchaToken, studyOptIn);
         if (requiresEmailConfirmation) {
           notify({ title: 'Cuenta creada', message: 'Revisa tu email para confirmar la cuenta.', variant: 'success' });
         }
@@ -153,6 +161,43 @@ export default function AuthScreen() {
         </TouchableOpacity>
       </View>
 
+      {isSignUp && (
+        <View style={styles.consentGroup}>
+          <TouchableOpacity
+            style={styles.consentRow}
+            onPress={() => setAcceptedTerms((prev) => !prev)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: acceptedTerms }}
+            accessibilityLabel="Acepto los términos y condiciones"
+          >
+            <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+              {acceptedTerms && <Ionicons name="checkmark" size={13} color={colors.background} />}
+            </View>
+            <Text style={styles.consentText}>
+              Acepto los{' '}
+              <Text style={styles.consentLink} onPress={() => setTermsModalVisible(true)}>
+                términos y condiciones
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.consentRow}
+            onPress={() => setStudyOptIn((prev) => !prev)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: studyOptIn }}
+            accessibilityLabel="Quiero participar compartiendo datos anónimos para futuros estudios"
+          >
+            <View style={[styles.checkbox, studyOptIn && styles.checkboxChecked]}>
+              {studyOptIn && <Ionicons name="checkmark" size={13} color={colors.background} />}
+            </View>
+            <Text style={styles.consentText}>
+              Quiero participar compartiendo datos anónimos para futuros estudios <Text style={styles.consentOptional}>(opcional)</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <Hoverable scaleTo={1.015}>
         {({ hovered }) => (
           <TouchableOpacity
@@ -175,6 +220,8 @@ export default function AuthScreen() {
           </TouchableOpacity>
         )}
       </Hoverable>
+
+      <TermsModal visible={termsModalVisible} onClose={() => setTermsModalVisible(false)} />
 
       <Hoverable scaleTo={1.04}>
         <TouchableOpacity
@@ -402,6 +449,23 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  consentGroup: { gap: 10, marginBottom: 6 },
+  consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
+  consentText: { flex: 1, fontSize: 12.5, color: colors.textMuted, lineHeight: 18 },
+  consentLink: { color: colors.primary, fontWeight: '700', textDecorationLine: 'underline' },
+  consentOptional: { color: colors.textFaint, fontStyle: 'italic' },
 
   button: {
     flexDirection: 'row',
