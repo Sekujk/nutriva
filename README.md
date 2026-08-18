@@ -12,7 +12,7 @@ Nutriva es una app pensada para estudiantes de nutrición. No reemplaza lo que a
 ## Cómo usarla
 
 - **Web**: [sekujk.github.io/nutriva](https://sekujk.github.io/nutriva/) — funciona en PC, tablet y celular, sin instalar nada. En iPhone, abriéndola desde Safari y tocando Compartir → "Agregar a pantalla de inicio" queda igual que una app instalada.
-- **Android**: se compila con Expo/EAS como cualquier app nativa; el `.apk` se comparte por fuera (no está en Play Store todavía).
+- **Android**: se compila con Expo/EAS como cualquier app nativa; el `.apk` se comparte por fuera (no está en Play Store todavía). ⚠️ El [último APK publicado](https://github.com/Sekujk/nutriva/releases/latest) puede estar desactualizado por un tiempo (límite mensual de builds gratis de EAS); la versión web siempre tiene lo último.
 
 ## Qué se puede hacer hoy
 

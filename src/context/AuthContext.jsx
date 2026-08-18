@@ -28,8 +28,12 @@ export const AuthProvider = ({ children }) => {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email, password, captchaToken) => {
-    const { data, error } = await supabase.auth.signUp({ email, password, options: { captchaToken } });
+  const signUp = async (email, password, captchaToken, studyOptIn) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { captchaToken, data: { study_opt_in: !!studyOptIn } },
+    });
     if (error) throw error;
     return { requiresEmailConfirmation: !data.session };
   };
