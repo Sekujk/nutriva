@@ -10,6 +10,7 @@ import { useAppAlert } from '../../context/AppAlertContext';
 import { isValidBirthDate, toBirthDateString, formatBirthDate, calculateAge } from '../../utils/birthDate';
 import SubScreenHeader from './SubScreenHeader';
 import Avatar from '../../components/Avatar';
+import BirthDatePicker from '../../components/BirthDatePicker';
 import { darken } from '../../utils/color';
 import { FONT_DISPLAY } from '../../theme/typography';
 
@@ -57,10 +58,8 @@ export default function ProfileInfoScreen({ onBack }) {
   const [savingUsername, setSavingUsername] = useState(false);
 
   const [editingBirthDate, setEditingBirthDate] = useState(false);
-  const [day, setDay] = useState('');
-  const [month, setMonth] = useState('');
-  const [year, setYear] = useState('');
   const [savingBirthDate, setSavingBirthDate] = useState(false);
+  const [initialDay, initialMonth, initialYear] = birthDate ? birthDate.split('-').reverse() : ['', '', ''];
 
   const startEditingUsername = () => {
     setUsernameDraft(username);
@@ -84,14 +83,7 @@ export default function ProfileInfoScreen({ onBack }) {
     }
   };
 
-  const startEditingBirthDate = () => {
-    setDay('');
-    setMonth('');
-    setYear('');
-    setEditingBirthDate(true);
-  };
-
-  const saveBirthDate = async () => {
+  const saveBirthDate = async (day, month, year) => {
     if (!isValidBirthDate(day, month, year)) {
       notify({ title: 'Fecha inválida', message: 'Revisa el día, mes y año ingresados.', variant: 'warning' });
       return;
@@ -199,71 +191,23 @@ export default function ProfileInfoScreen({ onBack }) {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Fecha de nacimiento</Text>
-        {editingBirthDate ? (
-          <>
-            <View style={styles.dateRow}>
-              <TextInput
-                style={[styles.input, styles.dateInputSmall]}
-                placeholder="DD"
-                placeholderTextColor={colors.placeholder}
-                value={day}
-                onChangeText={setDay}
-                keyboardType="number-pad"
-                maxLength={2}
-                accessibilityLabel="Día de nacimiento"
-              />
-              <TextInput
-                style={[styles.input, styles.dateInputSmall]}
-                placeholder="MM"
-                placeholderTextColor={colors.placeholder}
-                value={month}
-                onChangeText={setMonth}
-                keyboardType="number-pad"
-                maxLength={2}
-                accessibilityLabel="Mes de nacimiento"
-              />
-              <TextInput
-                style={[styles.input, styles.dateInputLarge]}
-                placeholder="AAAA"
-                placeholderTextColor={colors.placeholder}
-                value={year}
-                onChangeText={setYear}
-                keyboardType="number-pad"
-                maxLength={4}
-                accessibilityLabel="Año de nacimiento"
-              />
-            </View>
-            <View style={styles.editActionsRow}>
-              <TouchableOpacity
-                style={styles.textButton}
-                onPress={() => setEditingBirthDate(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Cancelar"
-              >
-                <Text style={styles.textButtonLabel}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={saveBirthDate}
-                disabled={savingBirthDate}
-                accessibilityRole="button"
-                accessibilityLabel="Guardar fecha de nacimiento"
-              >
-                {savingBirthDate ? <ActivityIndicator size="small" color={colors.background} /> : (
-                  <Text style={styles.saveButtonText}>Guardar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : (
-          <TouchableOpacity style={styles.rowBetween} onPress={startEditingBirthDate} accessibilityRole="button" accessibilityLabel="Editar fecha de nacimiento">
-            <Text style={styles.rowValue}>
-              {birthDate ? `${formatBirthDate(birthDate)}${age !== null ? ` · ${age} años` : ''}` : 'No definida'}
-            </Text>
-            <Ionicons name="pencil-outline" size={18} color={colors.textFaint} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.rowBetween} onPress={() => setEditingBirthDate(true)} accessibilityRole="button" accessibilityLabel="Editar fecha de nacimiento">
+          <Text style={styles.rowValue}>
+            {birthDate ? `${formatBirthDate(birthDate)}${age !== null ? ` · ${age} años` : ''}` : 'No definida'}
+          </Text>
+          <Ionicons name="pencil-outline" size={18} color={colors.textFaint} />
+        </TouchableOpacity>
       </View>
+
+      <BirthDatePicker
+        visible={editingBirthDate}
+        initialDay={initialDay}
+        initialMonth={initialMonth}
+        initialYear={initialYear}
+        saving={savingBirthDate}
+        onSave={saveBirthDate}
+        onClose={() => setEditingBirthDate(false)}
+      />
     </ScrollView>
   );
 }
@@ -347,32 +291,4 @@ const getStyles = (colors) => StyleSheet.create({
   cardTitle: { fontSize: 12, color: colors.textMuted, fontWeight: '700', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.4 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   rowValue: { fontSize: 16, color: colors.text, fontWeight: '700' },
-
-  dateRow: { flexDirection: 'row', gap: 10 },
-  dateInputSmall: { flex: 1 },
-  dateInputLarge: { flex: 1.6 },
-  editActionsRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 12 },
-  textButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
-  textButtonLabel: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
-  saveButton: {
-    minHeight: 44,
-    minWidth: 100,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  saveButtonText: { color: colors.background, fontSize: 14, fontWeight: '700' },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 48,
-    color: colors.text,
-    backgroundColor: colors.surfaceMuted,
-    textAlign: 'center',
-  },
 });

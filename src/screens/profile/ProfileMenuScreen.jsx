@@ -23,7 +23,7 @@ const MENU_SECTIONS = [
     items: [
       { key: 'configuracion', icon: 'earth-outline', label: 'País', body: 'Tabla de composición de alimentos' },
       { key: 'apariencia', icon: 'color-palette-outline', label: 'Apariencia', body: 'Modo claro/oscuro y color de la app' },
-      { key: 'contrasena', icon: 'key-outline', label: 'Cambiar contraseña', body: 'Actualiza tu contraseña de acceso' },
+      { key: 'contrasena', icon: 'key-outline', label: 'Cambiar contraseña', body: 'Actualiza tu contraseña' },
     ],
   },
   {
@@ -32,7 +32,7 @@ const MENU_SECTIONS = [
       { key: 'faq', icon: 'help-circle-outline', label: 'Preguntas frecuentes', body: 'Dudas comunes sobre Nutriva' },
       { key: 'sugerencias', icon: 'bulb-outline', label: 'Sugerencias', body: 'Cuéntanos qué falta o qué mejorar' },
       { key: 'sobre', icon: 'sparkles-outline', label: 'Sobre la app', body: 'Versión, código y agradecimientos' },
-      { key: 'terminos', icon: 'document-text-outline', label: 'Términos y condiciones', body: 'Lo que aceptaste al registrarte' },
+      { key: 'terminos', icon: 'document-text-outline', label: 'Términos y condiciones', body: 'Tu cuenta, tus datos y cómo funciona Nutriva' },
     ],
   },
 ];
