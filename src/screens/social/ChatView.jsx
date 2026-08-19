@@ -99,14 +99,17 @@ function ReactionPicker({ mine, canDelete, onPick, onDelete, onClose, colors, st
         </TouchableOpacity>
       ))}
       {canDelete && (
-        <TouchableOpacity
-          style={styles.reactionPickerDelete}
-          onPress={onDelete}
-          accessibilityRole="button"
-          accessibilityLabel="Eliminar mensaje"
-        >
-          <Ionicons name="trash-outline" size={16} color={colors.danger || '#c0392b'} />
-        </TouchableOpacity>
+        <>
+          <View style={styles.reactionPickerDivider} />
+          <TouchableOpacity
+            style={styles.reactionPickerDelete}
+            onPress={onDelete}
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar mensaje"
+          >
+            <Ionicons name="trash-outline" size={15} color={colors.danger || '#c0392b'} />
+          </TouchableOpacity>
+        </>
       )}
       <TouchableOpacity style={styles.reactionPickerClose} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar">
         <Ionicons name="close" size={14} color={colors.textFaint} />
@@ -347,11 +350,18 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
         'postgres_changes',
         { event: '*', schema: 'public', table: 'message_reactions' },
         (payload) => {
-          const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
-          setReactions((prev) => {
-            const withoutThis = prev.filter((r) => r.id !== row.id);
-            return payload.eventType === 'DELETE' ? withoutThis : [...withoutThis, payload.new];
-          });
+          if (payload.eventType === 'DELETE') {
+            const row = payload.old;
+            setReactions((prev) => prev.filter((r) => r.id !== row.id));
+          } else {
+            const row = payload.new;
+            // Una reaccion por usuario por mensaje: reemplaza por (message_id, user_id),
+            // no por id, porque el id local puede ser el placeholder optimista.
+            setReactions((prev) => [
+              ...prev.filter((r) => !(r.message_id === row.message_id && r.user_id === row.user_id)),
+              row,
+            ]);
+          }
         },
       )
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
@@ -711,16 +721,16 @@ const getStyles = (colors) => StyleSheet.create({
   reactionPickerMine: { alignSelf: 'flex-end' },
   reactionPickerEmoji: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   reactionPickerEmojiText: { fontSize: 17 },
+  reactionPickerDivider: { width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 4 },
   reactionPickerDelete: {
     width: 26,
     height: 26,
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 2,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: 'rgba(192,57,43,0.12)',
   },
-  reactionPickerClose: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', marginLeft: 2 },
+  reactionPickerClose: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
 
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   typingAvatars: { flexDirection: 'row' },
