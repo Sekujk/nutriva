@@ -26,6 +26,7 @@ export default function ProfileInfoScreen({ onBack }) {
   const avatarUrl = profile?.avatar_url || null;
   const birthDate = profile?.birth_date || '';
   const age = calculateAge(birthDate);
+  const bio = profile?.bio || '';
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -60,6 +61,28 @@ export default function ProfileInfoScreen({ onBack }) {
   const [editingBirthDate, setEditingBirthDate] = useState(false);
   const [savingBirthDate, setSavingBirthDate] = useState(false);
   const [initialDay, initialMonth, initialYear] = birthDate ? birthDate.split('-').reverse() : ['', '', ''];
+
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioDraft, setBioDraft] = useState(bio);
+  const [savingBio, setSavingBio] = useState(false);
+  const BIO_MAX = 160;
+
+  const startEditingBio = () => {
+    setBioDraft(bio);
+    setEditingBio(true);
+  };
+
+  const saveBio = async () => {
+    setSavingBio(true);
+    try {
+      await updateProfile({ bio: bioDraft.trim() || null });
+      setEditingBio(false);
+    } catch (error) {
+      notify({ title: 'Error', message: error.message || 'No se pudo guardar la descripción', variant: 'error' });
+    } finally {
+      setSavingBio(false);
+    }
+  };
 
   const startEditingUsername = () => {
     setUsernameDraft(username);
@@ -208,6 +231,55 @@ export default function ProfileInfoScreen({ onBack }) {
         onSave={saveBirthDate}
         onClose={() => setEditingBirthDate(false)}
       />
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Descripción</Text>
+        {editingBio ? (
+          <>
+            <TextInput
+              style={styles.bioInput}
+              value={bioDraft}
+              onChangeText={(v) => setBioDraft(v.slice(0, BIO_MAX))}
+              placeholder="Cuéntales algo a tus amigos, ej. tu ciclo o dónde estudias"
+              placeholderTextColor={colors.placeholder}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+              maxLength={BIO_MAX}
+              accessibilityLabel="Descripción de tu perfil"
+            />
+            <Text style={styles.bioCounter}>{bioDraft.length}/{BIO_MAX}</Text>
+            <View style={styles.editActionsRow}>
+              <TouchableOpacity
+                style={styles.textButton}
+                onPress={() => setEditingBio(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar"
+              >
+                <Text style={styles.textButtonLabel}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={saveBio}
+                disabled={savingBio}
+                accessibilityRole="button"
+                accessibilityLabel="Guardar descripción"
+              >
+                {savingBio ? <ActivityIndicator size="small" color={colors.background} /> : (
+                  <Text style={styles.saveButtonText}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <TouchableOpacity style={styles.rowBetween} onPress={startEditingBio} accessibilityRole="button" accessibilityLabel="Editar descripción">
+            <Text style={[styles.rowValue, styles.bioValue, !bio && styles.bioValueEmpty]} numberOfLines={2}>
+              {bio || 'Agrega una descripción'}
+            </Text>
+            <Ionicons name="pencil-outline" size={18} color={colors.textFaint} />
+          </TouchableOpacity>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -291,4 +363,31 @@ const getStyles = (colors) => StyleSheet.create({
   cardTitle: { fontSize: 12, color: colors.textMuted, fontWeight: '700', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.4 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   rowValue: { fontSize: 16, color: colors.text, fontWeight: '700' },
+  bioValue: { fontSize: 14.5, fontWeight: '500', flex: 1, lineHeight: 20 },
+  bioValueEmpty: { color: colors.textFaint, fontStyle: 'italic' },
+  bioInput: {
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 14,
+    padding: 12,
+    fontSize: 14.5,
+    minHeight: 76,
+    color: colors.text,
+    backgroundColor: colors.surfaceMuted,
+  },
+  bioCounter: { fontSize: 11, color: colors.textFaint, textAlign: 'right', marginTop: 4 },
+
+  editActionsRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 12 },
+  textButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  textButtonLabel: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
+  saveButton: {
+    minHeight: 44,
+    minWidth: 100,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  saveButtonText: { color: colors.background, fontSize: 14, fontWeight: '700' },
 });
