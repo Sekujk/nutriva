@@ -9,6 +9,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import Avatar from '../../components/Avatar';
 import Hoverable from '../../components/Hoverable';
+import FriendProfileModal from '../../components/FriendProfileModal';
 import { darken, lighten } from '../../utils/color';
 import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../../theme/typography';
 
@@ -58,6 +59,7 @@ export default function FriendsScreen({ onOpenGroups, onOpenChat }) {
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
+  const [viewingProfile, setViewingProfile] = useState(null);
 
   const load = useCallback(async () => {
     if (!myId) return;
@@ -437,10 +439,9 @@ export default function FriendsScreen({ onOpenGroups, onOpenChat }) {
                 {({ hovered }) => (
                   <View style={[styles.friendRow, hovered && styles.rowHovered]}>
                     <TouchableOpacity
-                      style={styles.friendRowMain}
-                      onPress={() => onOpenChat(f, f.friendshipId)}
+                      onPress={() => setViewingProfile(f)}
                       accessibilityRole="button"
-                      accessibilityLabel={`Abrir chat con ${f.username}#${f.tag}`}
+                      accessibilityLabel={`Ver perfil de ${f.username}#${f.tag}`}
                     >
                       <LinearGradient
                         colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
@@ -450,6 +451,13 @@ export default function FriendsScreen({ onOpenGroups, onOpenChat }) {
                       >
                         <Avatar uri={f.avatar_url} label={(f.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
                       </LinearGradient>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.friendRowMain}
+                      onPress={() => onOpenChat(f, f.friendshipId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Abrir chat con ${f.username}#${f.tag}`}
+                    >
                       <View style={styles.rowTextCol}>
                         <Text style={styles.friendName}>{f.username}<Tag tag={f.tag} style={styles.rowTag} /></Text>
                         {!!f.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(f.created_at)}</Text>}
@@ -472,6 +480,8 @@ export default function FriendsScreen({ onOpenGroups, onOpenChat }) {
           </View>
         )}
       </View>
+
+      <FriendProfileModal visible={!!viewingProfile} profile={viewingProfile} onClose={() => setViewingProfile(null)} />
     </ScrollView>
   );
 }

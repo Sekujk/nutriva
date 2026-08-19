@@ -8,6 +8,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import Avatar from '../../components/Avatar';
 import Hoverable from '../../components/Hoverable';
+import FriendProfileModal from '../../components/FriendProfileModal';
 import { lighten } from '../../utils/color';
 import { FONT_DISPLAY } from '../../theme/typography';
 import SubScreenHeader from '../profile/SubScreenHeader';
@@ -36,6 +37,7 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
   const [pickerOpen, setPickerOpen] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const [busyId, setBusyId] = useState(null);
+  const [viewingProfile, setViewingProfile] = useState(null);
 
   const isOwner = group?.owner_id === myId;
 
@@ -223,14 +225,20 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
               <Hoverable key={m.id} scaleTo={1.01}>
                 {({ hovered }) => (
                   <View style={[styles.row, hovered && styles.rowHovered]}>
-                    <LinearGradient
-                      colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.avatarRing}
+                    <TouchableOpacity
+                      onPress={() => setViewingProfile(m)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Ver perfil de ${m.username}#${m.tag}`}
                     >
-                      <Avatar uri={m.avatar_url} label={(m.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
-                    </LinearGradient>
+                      <LinearGradient
+                        colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.avatarRing}
+                      >
+                        <Avatar uri={m.avatar_url} label={(m.username?.[0] || '?').toUpperCase()} size={40} fontSize={16} />
+                      </LinearGradient>
+                    </TouchableOpacity>
                     <View style={styles.rowTextCol}>
                       <Text style={styles.rowLabel}>{m.username}<Text style={styles.rowTag}>#{m.tag}</Text>{m.id === myId ? ' (tú)' : ''}</Text>
                       {!!m.created_at && <Text style={styles.rowSub}>En Nutriva desde {formatSince(m.created_at)}</Text>}
@@ -259,6 +267,8 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
           )}
         </ScrollView>
       )}
+
+      <FriendProfileModal visible={!!viewingProfile} profile={viewingProfile} onClose={() => setViewingProfile(null)} />
     </View>
   );
 }
