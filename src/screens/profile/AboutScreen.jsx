@@ -65,27 +65,7 @@ export default function AboutScreen({ onBack }) {
         )}
       </Hoverable>
 
-      {Platform.OS === 'web' ? (
-        <Hoverable scaleTo={1.01}>
-          {({ hovered }) => (
-            <TouchableOpacity
-              style={[styles.row, hovered && styles.rowHovered]}
-              onPress={() => Linking.openURL(RELEASES_URL)}
-              accessibilityRole="link"
-              accessibilityLabel="Descargar la app para Android"
-            >
-              <View style={styles.rowIcon}>
-                <Ionicons name="logo-android" size={19} color={colors.primary} />
-              </View>
-              <View style={styles.rowTextCol}>
-                <Text style={styles.rowLabel}>Descargar para Android</Text>
-                <Text style={styles.rowBody}>APK instalable, sin pasar por Play Store</Text>
-              </View>
-              <Ionicons name="open-outline" size={18} color={colors.textFaint} />
-            </TouchableOpacity>
-          )}
-        </Hoverable>
-      ) : (
+      {Platform.OS === 'web' ? null : (
         <Hoverable scaleTo={1.01}>
           {({ hovered }) => (
             <TouchableOpacity
