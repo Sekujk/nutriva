@@ -8,6 +8,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useAppAlert } from '../../context/AppAlertContext';
 import Hoverable from '../../components/Hoverable';
 import Avatar from '../../components/Avatar';
+import TermsModal from '../../components/TermsModal';
 import { darken, lighten } from '../../utils/color';
 import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../../theme/typography';
 
@@ -22,6 +23,7 @@ const MENU_SECTIONS = [
     items: [
       { key: 'configuracion', icon: 'earth-outline', label: 'País', body: 'Tabla de composición de alimentos' },
       { key: 'apariencia', icon: 'color-palette-outline', label: 'Apariencia', body: 'Modo claro/oscuro y color de la app' },
+      { key: 'contrasena', icon: 'key-outline', label: 'Cambiar contraseña', body: 'Actualiza tu contraseña de acceso' },
     ],
   },
   {
@@ -30,6 +32,7 @@ const MENU_SECTIONS = [
       { key: 'faq', icon: 'help-circle-outline', label: 'Preguntas frecuentes', body: 'Dudas comunes sobre Nutriva' },
       { key: 'sugerencias', icon: 'bulb-outline', label: 'Sugerencias', body: 'Cuéntanos qué falta o qué mejorar' },
       { key: 'sobre', icon: 'sparkles-outline', label: 'Sobre la app', body: 'Versión, código y agradecimientos' },
+      { key: 'terminos', icon: 'document-text-outline', label: 'Términos y condiciones', body: 'Lo que aceptaste al registrarte' },
     ],
   },
 ];
@@ -90,6 +93,7 @@ export default function ProfileMenuScreen({ onNavigate }) {
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [deleting, setDeleting] = useState(false);
+  const [termsVisible, setTermsVisible] = useState(false);
 
   const email = session?.user?.email || '';
   const username = profile?.username || '';
@@ -184,7 +188,7 @@ export default function ProfileMenuScreen({ onNavigate }) {
                 key={item.key}
                 item={item}
                 index={index}
-                onPress={() => onNavigate(item.key)}
+                onPress={() => (item.key === 'terminos' ? setTermsVisible(true) : onNavigate(item.key))}
                 colors={colors}
                 styles={styles}
               />
@@ -218,6 +222,8 @@ export default function ProfileMenuScreen({ onNavigate }) {
           )}
         </TouchableOpacity>
       </View>
+
+      <TermsModal visible={termsVisible} onClose={() => setTermsVisible(false)} />
     </ScrollView>
   );
 }
