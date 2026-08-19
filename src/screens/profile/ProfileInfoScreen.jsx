@@ -285,8 +285,8 @@ export default function ProfileInfoScreen({ onBack }) {
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
-  headerBlock: { alignItems: 'center', marginBottom: 18 },
+  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1, gap: 16 },
+  headerBlock: { alignItems: 'center' },
   avatarWrapper: {},
   avatarRing: { width: 82, height: 82, borderRadius: 41, alignItems: 'center', justifyContent: 'center' },
   avatarLoading: {
