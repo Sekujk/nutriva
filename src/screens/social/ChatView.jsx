@@ -8,12 +8,14 @@ import { useTheme } from '../../theme/ThemeContext';
 import { FONT_DISPLAY } from '../../theme/typography';
 import Avatar from '../../components/Avatar';
 import CalculationBreakdown from '../../components/CalculationBreakdown';
+import Hoverable from '../../components/Hoverable';
 import foodsPeru from '../../data/foodsPeru';
 import foodsGuatemala from '../../data/foodsGuatemala';
 
 const DATASETS = { PE: foodsPeru, GT: foodsGuatemala };
 const TYPING_BROADCAST_THROTTLE_MS = 1500;
 const TYPING_EXPIRE_MS = 3000;
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 function fmt(n) {
   return Number.isFinite(n) ? (Number.isInteger(n) ? n : n.toFixed(1)) : 'N/D';
@@ -63,12 +65,67 @@ function CalculationAttachment({ attachment, mine, colors, styles, onOpen }) {
   );
 }
 
-function MessageBubble({ message, mine, sender, showSenderName, colors, styles, onOpenCalculation }) {
+function ReactionPills({ counts, myEmoji, mine, onToggle, styles }) {
+  if (counts.length === 0) return null;
+  return (
+    <View style={[styles.reactionRow, mine && styles.reactionRowMine]}>
+      {counts.map(({ emoji, count }) => (
+        <TouchableOpacity
+          key={emoji}
+          style={[styles.reactionPill, emoji === myEmoji && styles.reactionPillMine]}
+          onPress={() => onToggle(emoji)}
+          accessibilityRole="button"
+          accessibilityLabel={`Reacción ${emoji}, ${count}`}
+        >
+          <Text style={styles.reactionPillText}>{emoji} {count}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+function ReactionPicker({ mine, canDelete, onPick, onDelete, onClose, colors, styles }) {
+  return (
+    <View style={[styles.reactionPicker, mine && styles.reactionPickerMine]}>
+      {REACTION_EMOJIS.map((emoji) => (
+        <TouchableOpacity
+          key={emoji}
+          style={styles.reactionPickerEmoji}
+          onPress={() => onPick(emoji)}
+          accessibilityRole="button"
+          accessibilityLabel={`Reaccionar con ${emoji}`}
+        >
+          <Text style={styles.reactionPickerEmojiText}>{emoji}</Text>
+        </TouchableOpacity>
+      ))}
+      {canDelete && (
+        <TouchableOpacity
+          style={styles.reactionPickerDelete}
+          onPress={onDelete}
+          accessibilityRole="button"
+          accessibilityLabel="Eliminar mensaje"
+        >
+          <Ionicons name="trash-outline" size={16} color={colors.danger || '#c0392b'} />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity style={styles.reactionPickerClose} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar">
+        <Ionicons name="close" size={14} color={colors.textFaint} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function MessageBubble({
+  message, mine, sender, showSenderName, colors, styles, onOpenCalculation,
+  reactionCounts, myEmoji, active, onOpenActions, onCloseActions, onToggleReaction, onDelete,
+}) {
   const entrance = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(entrance, { toValue: 1, friction: 8, tension: 90, useNativeDriver: true }).start();
   }, []);
+
+  const isDeleted = !!message.deleted_at;
 
   return (
     <Animated.View
@@ -84,24 +141,77 @@ function MessageBubble({ message, mine, sender, showSenderName, colors, styles, 
         },
       ]}
     >
-      <View style={[styles.bubble, mine && styles.bubbleMine]}>
-        {showSenderName && !mine && !!sender?.username && (
-          <Text style={styles.senderName}>{sender.username}</Text>
-        )}
-        {!!message.text && <Text style={[styles.bubbleText, mine && styles.bubbleTextMine]}>{message.text}</Text>}
-        {message.attachment_kind === 'food' && (
-          <FoodAttachment attachment={message.attachment} mine={mine} colors={colors} styles={styles} />
-        )}
-        {message.attachment_kind === 'calculation' && (
-          <CalculationAttachment
-            attachment={message.attachment}
+      <View style={styles.messageCol}>
+        <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
+          <TouchableOpacity
+            activeOpacity={isDeleted ? 1 : 0.85}
+            onLongPress={isDeleted ? undefined : onOpenActions}
+            delayLongPress={350}
+            style={[styles.bubble, mine && styles.bubbleMine, isDeleted && styles.bubbleDeleted]}
+          >
+            {showSenderName && !mine && !!sender?.username && (
+              <Text style={styles.senderName}>{sender.username}</Text>
+            )}
+            {isDeleted ? (
+              <Text style={[styles.bubbleTextDeleted, mine && styles.bubbleTextDeletedMine]}>
+                <Ionicons name="ban-outline" size={12} color={mine ? colors.background : colors.textFaint} /> Mensaje eliminado
+              </Text>
+            ) : (
+              <>
+                {!!message.text && <Text style={[styles.bubbleText, mine && styles.bubbleTextMine]}>{message.text}</Text>}
+                {message.attachment_kind === 'food' && (
+                  <FoodAttachment attachment={message.attachment} mine={mine} colors={colors} styles={styles} />
+                )}
+                {message.attachment_kind === 'calculation' && (
+                  <CalculationAttachment
+                    attachment={message.attachment}
+                    mine={mine}
+                    colors={colors}
+                    styles={styles}
+                    onOpen={() => onOpenCalculation(message.attachment)}
+                  />
+                )}
+              </>
+            )}
+            <Text style={[styles.time, mine && styles.timeMine]}>{formatTime(message.created_at)}</Text>
+          </TouchableOpacity>
+          {!isDeleted && (
+            <Hoverable scaleTo={1}>
+              {() => (
+                <TouchableOpacity
+                  style={styles.moreButton}
+                  onPress={() => (active ? onCloseActions() : onOpenActions())}
+                  accessibilityRole="button"
+                  accessibilityLabel="Más opciones"
+                >
+                  <Ionicons name="ellipsis-horizontal" size={14} color={colors.textFaint} />
+                </TouchableOpacity>
+              )}
+            </Hoverable>
+          )}
+        </View>
+
+        {active && !isDeleted && (
+          <ReactionPicker
             mine={mine}
+            canDelete={mine}
+            onPick={(emoji) => onToggleReaction(emoji)}
+            onDelete={onDelete}
+            onClose={onCloseActions}
             colors={colors}
             styles={styles}
-            onOpen={() => onOpenCalculation(message.attachment)}
           />
         )}
-        <Text style={[styles.time, mine && styles.timeMine]}>{formatTime(message.created_at)}</Text>
+
+        {!isDeleted && (
+          <ReactionPills
+            counts={reactionCounts}
+            myEmoji={myEmoji}
+            mine={mine}
+            onToggle={onToggleReaction}
+            styles={styles}
+          />
+        )}
       </View>
     </Animated.View>
   );
@@ -180,6 +290,8 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
 
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState([]);
+  const [reactions, setReactions] = useState([]);
+  const [activeMessageId, setActiveMessageId] = useState(null);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [typingIds, setTypingIds] = useState([]);
@@ -200,9 +312,17 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
         .eq(filterColumn, filterValue)
         .order('created_at', { ascending: true })
         .limit(300);
-      if (!cancelled) {
-        setMessages(data || []);
-        setLoading(false);
+      if (cancelled) return;
+      setMessages(data || []);
+      setLoading(false);
+
+      const ids = (data || []).map((m) => m.id);
+      if (ids.length > 0) {
+        const { data: reactionRows } = await supabase
+          .from('message_reactions')
+          .select('*')
+          .in('message_id', ids);
+        if (!cancelled) setReactions(reactionRows || []);
       }
     };
     load();
@@ -214,6 +334,24 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `${filterColumn}=eq.${filterValue}` },
         (payload) => {
           setMessages((prev) => (prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]));
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `${filterColumn}=eq.${filterValue}` },
+        (payload) => {
+          setMessages((prev) => prev.map((m) => (m.id === payload.new.id ? payload.new : m)));
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'message_reactions' },
+        (payload) => {
+          const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
+          setReactions((prev) => {
+            const withoutThis = prev.filter((r) => r.id !== row.id);
+            return payload.eventType === 'DELETE' ? withoutThis : [...withoutThis, payload.new];
+          });
         },
       )
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
@@ -252,6 +390,25 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
       setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]));
     }
     return error;
+  };
+
+  const toggleReaction = async (messageId, emoji) => {
+    setActiveMessageId(null);
+    const mine = reactions.find((r) => r.message_id === messageId && r.user_id === myId);
+    if (mine && mine.emoji === emoji) {
+      setReactions((prev) => prev.filter((r) => r.id !== mine.id));
+      await supabase.from('message_reactions').delete().eq('id', mine.id);
+      return;
+    }
+    const optimistic = { id: mine?.id || `pending-${messageId}-${myId}`, message_id: messageId, user_id: myId, emoji };
+    setReactions((prev) => [...prev.filter((r) => !(r.message_id === messageId && r.user_id === myId)), optimistic]);
+    await supabase.from('message_reactions').upsert({ message_id: messageId, user_id: myId, emoji }, { onConflict: 'message_id,user_id' });
+  };
+
+  const deleteMessage = async (messageId) => {
+    setActiveMessageId(null);
+    setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, deleted_at: new Date().toISOString(), text: null, attachment: null, attachment_kind: null } : m)));
+    await supabase.from('messages').update({ deleted_at: new Date().toISOString() }).eq('id', messageId);
   };
 
   const handleTextChange = (value) => {
@@ -316,6 +473,21 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
     setLoadingCalcs(false);
   };
 
+  const reactionsByMessage = useMemo(() => {
+    const map = {};
+    reactions.forEach((r) => {
+      if (!map[r.message_id]) map[r.message_id] = [];
+      map[r.message_id].push(r);
+    });
+    const counts = {};
+    Object.entries(map).forEach(([messageId, rows]) => {
+      const tally = {};
+      rows.forEach((r) => { tally[r.emoji] = (tally[r.emoji] || 0) + 1; });
+      counts[messageId] = Object.entries(tally).map(([emoji, count]) => ({ emoji, count }));
+    });
+    return counts;
+  }, [reactions]);
+
   const foodResults = useMemo(() => {
     const q = foodQuery.trim().toLowerCase();
     if (!q) return [];
@@ -351,6 +523,13 @@ export default function ChatView({ filterColumn, filterValue, participantsById, 
               colors={colors}
               styles={styles}
               onOpenCalculation={setOpenCalc}
+              reactionCounts={reactionsByMessage[m.id] || []}
+              myEmoji={reactions.find((r) => r.message_id === m.id && r.user_id === myId)?.emoji || null}
+              active={activeMessageId === m.id}
+              onOpenActions={() => setActiveMessageId(m.id)}
+              onCloseActions={() => setActiveMessageId(null)}
+              onToggleReaction={(emoji) => toggleReaction(m.id, emoji)}
+              onDelete={() => deleteMessage(m.id)}
             />
           ))
         )}
@@ -474,8 +653,12 @@ const getStyles = (colors) => StyleSheet.create({
 
   messageRow: { flexDirection: 'row', justifyContent: 'flex-start' },
   messageRowMine: { justifyContent: 'flex-end' },
+  messageCol: { maxWidth: '78%', gap: 4 },
+  bubbleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  bubbleRowMine: { flexDirection: 'row-reverse' },
+  moreButton: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   bubble: {
-    maxWidth: '78%',
+    flexShrink: 1,
     backgroundColor: colors.surfaceMuted,
     borderRadius: 16,
     borderBottomLeftRadius: 4,
@@ -487,11 +670,57 @@ const getStyles = (colors) => StyleSheet.create({
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 4,
   },
+  bubbleDeleted: { opacity: 0.6 },
   senderName: { fontSize: 11, fontWeight: '700', color: colors.primary, marginBottom: 2 },
   bubbleText: { fontSize: 14.5, color: colors.text, lineHeight: 20 },
   bubbleTextMine: { color: colors.background },
+  bubbleTextDeleted: { fontSize: 13, color: colors.textFaint, fontStyle: 'italic' },
+  bubbleTextDeletedMine: { color: colors.background, opacity: 0.85 },
   time: { fontSize: 9.5, color: colors.textFaint, marginTop: 4, alignSelf: 'flex-end' },
   timeMine: { color: colors.background, opacity: 0.75 },
+
+  reactionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingLeft: 4 },
+  reactionRowMine: { justifyContent: 'flex-end', paddingLeft: 0, paddingRight: 4 },
+  reactionPill: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  reactionPillMine: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  reactionPillText: { fontSize: 11.5, color: colors.text },
+
+  reactionPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  reactionPickerMine: { alignSelf: 'flex-end' },
+  reactionPickerEmoji: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  reactionPickerEmojiText: { fontSize: 17 },
+  reactionPickerDelete: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 2,
+    backgroundColor: colors.surfaceMuted,
+  },
+  reactionPickerClose: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', marginLeft: 2 },
 
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   typingAvatars: { flexDirection: 'row' },
