@@ -48,6 +48,11 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  const updatePassword = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  };
+
   const deleteAccount = async () => {
     const { error } = await supabase.functions.invoke('delete-account');
     if (error) throw error;
@@ -56,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ session, isLoading, signUp, signIn, signOut, deleteAccount }}
+      value={{ session, isLoading, signUp, signIn, signOut, deleteAccount, updatePassword }}
     >
       {children}
     </AuthContext.Provider>
