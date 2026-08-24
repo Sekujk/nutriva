@@ -11,6 +11,7 @@ import { TMB_FORMULAS } from '../data/tmbFormulas';
 import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight, computeICC, classifyICC, classifyWaistRisk } from '../data/anthropometrics';
 import { getActivityOptions, STRESS_FACTORS, getStressCategory } from '../data/getFactors';
 import { getIdealCMB, getCMBAdjustment, computeAdjustedCMB, computePercentCMB, classifyCMBPercent } from '../data/cmb';
+import EstimationTools from '../components/EstimationTools';
 
 const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
@@ -81,6 +82,7 @@ export default function CalculatorScreen() {
   const [waist, setWaist] = useState('');
   const [hip, setHip] = useState('');
   const [cmb, setCmb] = useState('');
+  const [estimatorVisible, setEstimatorVisible] = useState(false);
   const [hospitalized, setHospitalized] = useState(false);
   const [activityKey, setActivityKey] = useState('moderada');
   const [stressKey, setStressKey] = useState('noAplica');
@@ -235,6 +237,16 @@ export default function CalculatorScreen() {
             />
           </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.estimatorLink}
+          onPress={() => setEstimatorVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="No puedo medir al paciente directo, estimar peso o talla"
+        >
+          <Ionicons name="calculator-outline" size={14} color={colors.primary} />
+          <Text style={styles.estimatorLinkText}>¿No puedes medir al paciente directo? Estimar peso o talla</Text>
+        </TouchableOpacity>
 
         <Text style={styles.optionalLabel}>Medidas opcionales (para ICC y riesgo de cintura)</Text>
         <View style={styles.inputRow}>
@@ -555,6 +567,17 @@ export default function CalculatorScreen() {
     </>
   );
 
+  const estimator = (
+    <EstimationTools
+      visible={estimatorVisible}
+      onClose={() => setEstimatorVisible(false)}
+      sex={sex}
+      age={a}
+      onApplyWeight={(value) => { setWeight(String(Math.round(value * 10) / 10)); setEstimatorVisible(false); }}
+      onApplyHeight={(value) => { setHeight(String(Math.round(value * 10) / 10)); setEstimatorVisible(false); }}
+    />
+  );
+
   if (isDesktop) {
     return (
       <ScrollView contentContainerStyle={styles.desktopContainer}>
@@ -562,6 +585,7 @@ export default function CalculatorScreen() {
           <View style={styles.desktopCol}>{formContent}</View>
           <View style={[styles.desktopCol, styles.desktopResultCol]}>{resultContent}</View>
         </View>
+        {estimator}
       </ScrollView>
     );
   }
@@ -570,6 +594,7 @@ export default function CalculatorScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {formContent}
       {resultContent}
+      {estimator}
     </ScrollView>
   );
 }
@@ -653,6 +678,8 @@ const getStyles = (colors) => StyleSheet.create({
   inputCol: { flex: 1 },
   label: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 6 },
   optionalLabel: { fontSize: 11.5, color: colors.textFaint, fontWeight: '600', marginTop: 14, marginBottom: 8 },
+  estimatorLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
+  estimatorLinkText: { fontSize: 12, color: colors.primary, fontWeight: '600', flexShrink: 1 },
   input: {
     borderWidth: 1,
     borderColor: colors.borderStrong,
