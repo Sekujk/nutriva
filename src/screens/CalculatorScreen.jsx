@@ -10,6 +10,7 @@ import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/t
 import { TMB_FORMULAS } from '../data/tmbFormulas';
 import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight, computeICC, classifyICC, classifyWaistRisk } from '../data/anthropometrics';
 import { getActivityOptions, STRESS_FACTORS, getStressCategory } from '../data/getFactors';
+import { getIdealCMB, getCMBAdjustment, computeAdjustedCMB, computePercentCMB, classifyCMBPercent } from '../data/cmb';
 
 const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
@@ -79,6 +80,7 @@ export default function CalculatorScreen() {
   const [age, setAge] = useState('');
   const [waist, setWaist] = useState('');
   const [hip, setHip] = useState('');
+  const [cmb, setCmb] = useState('');
   const [hospitalized, setHospitalized] = useState(false);
   const [activityKey, setActivityKey] = useState('moderada');
   const [stressKey, setStressKey] = useState('noAplica');
@@ -134,6 +136,13 @@ export default function CalculatorScreen() {
   const iccRisk = icc !== null ? classifyICC(sex, icc) : null;
   const waistRisk = waistCm > 0 ? classifyWaistRisk(sex, waistCm) : null;
 
+  const cmbCm = parseNum(cmb);
+  const cmbIdeal = a > 0 ? getIdealCMB(a, sex) : null;
+  const cmbAdjustmentCm = imcCategory ? getCMBAdjustment(imcCategory.key, sex, hospitalized) : 0;
+  const cmbAdjusted = cmbCm > 0 ? computeAdjustedCMB(cmbCm, cmbAdjustmentCm) : null;
+  const cmbPercent = cmbAdjusted !== null && cmbIdeal ? computePercentCMB(cmbAdjusted, cmbIdeal) : null;
+  const cmbInterpretation = cmbPercent !== null ? classifyCMBPercent(cmbPercent) : null;
+
   const handleSave = async () => {
     if (!hasInputs || tmb === null || get === null) return;
     setSaving(true);
@@ -146,6 +155,7 @@ export default function CalculatorScreen() {
         age: a,
         waist_cm: waistCm > 0 ? waistCm : null,
         hip_cm: hipCm > 0 ? hipCm : null,
+        cmb_cm: cmbCm > 0 ? cmbCm : null,
         hospitalized,
         activity_key: activityKey,
         activity_label: activity.label,
@@ -250,6 +260,22 @@ export default function CalculatorScreen() {
               placeholder="95"
               placeholderTextColor={colors.placeholder}
               accessibilityLabel="Circunferencia de cadera en centímetros"
+            />
+          </View>
+        </View>
+
+        <Text style={styles.optionalLabel}>CMB (circunferencia muscular del brazo), opcional</Text>
+        <View style={styles.inputRow}>
+          <View style={styles.inputCol}>
+            <Text style={styles.label}>CMB medida (cm)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              value={cmb}
+              onChangeText={setCmb}
+              placeholder="Sin dato"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Circunferencia muscular del brazo en centímetros"
             />
           </View>
         </View>
@@ -498,6 +524,32 @@ export default function CalculatorScreen() {
               <Text style={[styles.imcBadgeText, styles[`riskBadgeText_${waistRisk.key}`]]}>{waistRisk.label}</Text>
             </View>
           </View>
+        </View>
+      )}
+
+      {cmbCm > 0 && (
+        <View style={styles.anthroCard}>
+          <Text style={styles.sectionTitle}>% CMB</Text>
+          {cmbIdeal === null ? (
+            <Text style={styles.anthroLabel}>No hay valor de referencia de CMB para esta edad.</Text>
+          ) : (
+            <>
+              {cmbAdjustmentCm !== 0 && (
+                <Text style={styles.cmbAdjustmentNote}>
+                  CMB ajustada por {imcCategory.label.toLowerCase()}: {cmbCm} {cmbAdjustmentCm > 0 ? '+' : ''}{cmbAdjustmentCm} = {cmbAdjusted.toFixed(1)} cm
+                </Text>
+              )}
+              <View style={styles.imcRow}>
+                <View>
+                  <Text style={styles.imcValue}>{cmbPercent.toFixed(0)}%</Text>
+                  <Text style={styles.imcUnit}>vs. ideal {cmbIdeal} cm</Text>
+                </View>
+                <View style={[styles.imcBadge, styles[`cmbBadge_${cmbInterpretation.key}`]]}>
+                  <Text style={[styles.imcBadgeText, styles[`cmbBadgeText_${cmbInterpretation.key}`]]}>{cmbInterpretation.label}</Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
       )}
     </>
@@ -764,6 +816,16 @@ const getStyles = (colors) => StyleSheet.create({
   riskBadgeText_normal: { color: colors.success },
   riskBadgeText_elevado: { color: colors.warning },
   riskBadgeText_muyElevado: { color: colors.danger },
+
+  cmbAdjustmentNote: { fontSize: 11.5, color: colors.textFaint, marginBottom: 10, lineHeight: 16 },
+  cmbBadge_normal: { backgroundColor: colors.successSoft },
+  cmbBadge_leve: { backgroundColor: colors.warningSoft },
+  cmbBadge_moderada: { backgroundColor: colors.warningSoft },
+  cmbBadge_severa: { backgroundColor: colors.dangerSoft },
+  cmbBadgeText_normal: { color: colors.success },
+  cmbBadgeText_leve: { color: colors.warning },
+  cmbBadgeText_moderada: { color: colors.warning },
+  cmbBadgeText_severa: { color: colors.danger },
 
   anthroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
   anthroLabel: { fontSize: 13, color: colors.textMuted, flex: 1, marginRight: 10 },
