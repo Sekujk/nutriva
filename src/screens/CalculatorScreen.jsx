@@ -8,7 +8,7 @@ import { supabase } from '../config/supabase';
 import useResponsive from '../hooks/useResponsive';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
 import { ACTIVITY_FACTORS, TMB_FORMULAS } from '../data/tmbFormulas';
-import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight } from '../data/anthropometrics';
+import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight, computeICC, classifyICC, classifyWaistRisk } from '../data/anthropometrics';
 
 const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
@@ -76,6 +76,8 @@ export default function CalculatorScreen() {
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
   const [age, setAge] = useState('');
+  const [waist, setWaist] = useState('');
+  const [hip, setHip] = useState('');
   const [activityKey, setActivityKey] = useState('moderado');
   const [formulaKey, setFormulaKey] = useState('mifflin');
   const [tmbOverride, setTmbOverride] = useState(null);
@@ -102,6 +104,12 @@ export default function CalculatorScreen() {
   const showsAdjustedWeight = imcCategory && (imcCategory.key === 'sobrepeso' || imcCategory.key.startsWith('obesidad'));
   const adjustedWeight = showsAdjustedWeight && w > 0 && idealWeightByImc !== null ? computeAdjustedWeight(w, idealWeightByImc) : null;
 
+  const waistCm = parseNum(waist);
+  const hipCm = parseNum(hip);
+  const icc = waistCm > 0 && hipCm > 0 ? computeICC(waistCm, hipCm) : null;
+  const iccRisk = icc !== null ? classifyICC(sex, icc) : null;
+  const waistRisk = waistCm > 0 ? classifyWaistRisk(sex, waistCm) : null;
+
   const handleSave = async () => {
     if (!hasInputs || tmb === null || get === null) return;
     setSaving(true);
@@ -112,6 +120,8 @@ export default function CalculatorScreen() {
         weight: w,
         height: h,
         age: a,
+        waist_cm: waistCm > 0 ? waistCm : null,
+        hip_cm: hipCm > 0 ? hipCm : null,
         activity_key: activityKey,
         activity_label: activity.label,
         activity_factor: activity.value,
@@ -185,6 +195,34 @@ export default function CalculatorScreen() {
               placeholder="22"
               placeholderTextColor={colors.placeholder}
               accessibilityLabel="Edad en años"
+            />
+          </View>
+        </View>
+
+        <Text style={styles.optionalLabel}>Medidas opcionales (para ICC y riesgo de cintura)</Text>
+        <View style={styles.inputRow}>
+          <View style={styles.inputCol}>
+            <Text style={styles.label}>Cintura (cm)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              value={waist}
+              onChangeText={setWaist}
+              placeholder="80"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Circunferencia de cintura en centímetros"
+            />
+          </View>
+          <View style={styles.inputCol}>
+            <Text style={styles.label}>Cadera (cm)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              value={hip}
+              onChangeText={setHip}
+              placeholder="95"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Circunferencia de cadera en centímetros"
             />
           </View>
         </View>
@@ -340,6 +378,34 @@ export default function CalculatorScreen() {
           )}
         </View>
       )}
+
+      {waistRisk !== null && (
+        <View style={styles.anthroCard}>
+          <Text style={styles.sectionTitle}>Riesgo cardiometabólico</Text>
+
+          {icc !== null && (
+            <>
+              <View style={styles.imcRow}>
+                <View>
+                  <Text style={styles.imcValue}>{icc.toFixed(2)}</Text>
+                  <Text style={styles.imcUnit}>ICC</Text>
+                </View>
+                <View style={[styles.imcBadge, styles[`riskBadge_${iccRisk.key}`]]}>
+                  <Text style={[styles.imcBadgeText, styles[`riskBadgeText_${iccRisk.key}`]]}>{iccRisk.label}</Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+            </>
+          )}
+
+          <View style={styles.anthroRow}>
+            <Text style={styles.anthroLabel}>Circunferencia de cintura</Text>
+            <View style={[styles.imcBadge, styles[`riskBadge_${waistRisk.key}`]]}>
+              <Text style={[styles.imcBadgeText, styles[`riskBadgeText_${waistRisk.key}`]]}>{waistRisk.label}</Text>
+            </View>
+          </View>
+        </View>
+      )}
     </>
   );
 
@@ -440,6 +506,7 @@ const getStyles = (colors) => StyleSheet.create({
   inputRow: { flexDirection: 'row', gap: 10 },
   inputCol: { flex: 1 },
   label: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 6 },
+  optionalLabel: { fontSize: 11.5, color: colors.textFaint, fontWeight: '600', marginTop: 14, marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderColor: colors.borderStrong,
@@ -588,6 +655,19 @@ const getStyles = (colors) => StyleSheet.create({
   imcBadgeText_obesidadI: { color: colors.danger },
   imcBadgeText_obesidadII: { color: colors.danger },
   imcBadgeText_obesidadIII: { color: colors.danger },
+
+  riskBadge_bajo: { backgroundColor: colors.successSoft },
+  riskBadge_mediano: { backgroundColor: colors.warningSoft },
+  riskBadge_alto: { backgroundColor: colors.dangerSoft },
+  riskBadge_normal: { backgroundColor: colors.successSoft },
+  riskBadge_elevado: { backgroundColor: colors.warningSoft },
+  riskBadge_muyElevado: { backgroundColor: colors.dangerSoft },
+  riskBadgeText_bajo: { color: colors.success },
+  riskBadgeText_mediano: { color: colors.warning },
+  riskBadgeText_alto: { color: colors.danger },
+  riskBadgeText_normal: { color: colors.success },
+  riskBadgeText_elevado: { color: colors.warning },
+  riskBadgeText_muyElevado: { color: colors.danger },
 
   anthroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
   anthroLabel: { fontSize: 13, color: colors.textMuted, flex: 1, marginRight: 10 },
