@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Animated } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Animated, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/ThemeContext';
@@ -11,6 +11,7 @@ import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import Hoverable from '../components/Hoverable';
 import useResponsive from '../hooks/useResponsive';
 import CalculationBreakdown from '../components/CalculationBreakdown';
+import { hapticLight, hapticWarning } from '../utils/haptics';
 
 const MONTHS_SHORT = [
   'ene', 'feb', 'mar', 'abr', 'may', 'jun',
@@ -133,23 +134,34 @@ export default function HistoryScreen() {
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [items, setItems] = useState([]);
   const [deletingId, setDeletingId] = useState(null);
   const [openItem, setOpenItem] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    supabase
+  const loadItems = useCallback(async () => {
+    const { data, error } = await supabase
       .from('calculations')
       .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (!error) setItems(data || []);
-        setLoading(false);
-      });
-    return () => { cancelled = true; };
+      .order('created_at', { ascending: false });
+    if (!error) setItems(data || []);
+    return error;
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadItems().then(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [loadItems]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    hapticLight();
+    await loadItems();
+    setRefreshing(false);
+  }, [loadItems]);
 
   const groups = useMemo(() => {
     const map = new Map();
@@ -162,6 +174,7 @@ export default function HistoryScreen() {
   }, [items]);
 
   const handleDelete = (item) => {
+    hapticWarning();
     confirm({
       title: 'Eliminar caso',
       message: `Se va a borrar el caso del ${formatDate(item.created_at)} para siempre.`,
@@ -191,7 +204,10 @@ export default function HistoryScreen() {
 
   if (items.length === 0) {
     return (
-      <View style={styles.center}>
+      <ScrollView
+        contentContainerStyle={styles.centerScroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+      >
         <View style={styles.iconBadge}>
           <Ionicons name="time-outline" size={30} color={colors.primary} />
         </View>
@@ -199,14 +215,17 @@ export default function HistoryScreen() {
         <Text style={styles.body}>
           Desde la Calculadora, toca "Guardar en historial" para ir armando tu cuaderno de trabajo.
         </Text>
-      </View>
+      </ScrollView>
     );
   }
 
   let runningIndex = 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+    >
       <View style={isDesktop ? styles.desktopWrap : null}>
         {groups.map((group) => (
           <View key={group.label} style={styles.group}>
@@ -242,6 +261,7 @@ const getStyles = (colors) => StyleSheet.create({
   container: { padding: 20, backgroundColor: colors.background, flexGrow: 1 },
   desktopWrap: { width: '100%', maxWidth: 640, alignSelf: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14, backgroundColor: colors.background },
+  centerScroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14, backgroundColor: colors.background },
   iconBadge: {
     width: 72,
     height: 72,
