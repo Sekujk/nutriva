@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAppAlert } from '../../context/AppAlertContext';
+import { useTour } from '../../context/TourContext';
 import Hoverable from '../../components/Hoverable';
 import Avatar from '../../components/Avatar';
 import TermsModal from '../../components/TermsModal';
@@ -29,6 +30,7 @@ const MENU_SECTIONS = [
   {
     label: 'Ayuda',
     items: [
+      { key: 'tour', icon: 'flag-outline', label: 'Ver guía de la app', body: 'Repite el recorrido de bienvenida' },
       { key: 'faq', icon: 'help-circle-outline', label: 'Preguntas frecuentes', body: 'Dudas comunes sobre Nutriva' },
       { key: 'sugerencias', icon: 'bulb-outline', label: 'Sugerencias', body: 'Cuéntanos qué falta o qué mejorar' },
       { key: 'sobre', icon: 'sparkles-outline', label: 'Sobre la app', body: 'Versión, código y agradecimientos' },
@@ -85,11 +87,12 @@ function MenuRow({ item, index, onPress, colors, styles }) {
   );
 }
 
-export default function ProfileMenuScreen({ onNavigate }) {
+export default function ProfileMenuScreen({ onNavigate, onNavigateApp }) {
   const { session, signOut, deleteAccount } = useAuth();
   const { profile } = useProfile();
   const { colors } = useTheme();
   const { confirm, notify } = useAppAlert();
+  const { requestReplay } = useTour();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [deleting, setDeleting] = useState(false);
@@ -100,6 +103,21 @@ export default function ProfileMenuScreen({ onNavigate }) {
   const avatarUrl = profile?.avatar_url || null;
   const createdAt = session?.user?.created_at ? new Date(session.user.created_at) : null;
   const memberSince = createdAt ? `${MENU_MONTHS[createdAt.getMonth()]} de ${createdAt.getFullYear()}` : '';
+
+  const handleMenuPress = (item) => {
+    if (item.key === 'terminos') {
+      setTermsVisible(true);
+      return;
+    }
+    if (item.key === 'tour') {
+      // El tour vive en la pantalla de Inicio, así que primero se navega
+      // ahí y luego se pide el reinicio: Home avisa cuando está lista.
+      requestReplay();
+      onNavigateApp?.('home');
+      return;
+    }
+    onNavigate(item.key);
+  };
 
   const handleSignOut = () => {
     confirm({
@@ -188,7 +206,7 @@ export default function ProfileMenuScreen({ onNavigate }) {
                 key={item.key}
                 item={item}
                 index={index}
-                onPress={() => (item.key === 'terminos' ? setTermsVisible(true) : onNavigate(item.key))}
+                onPress={() => handleMenuPress(item)}
                 colors={colors}
                 styles={styles}
               />

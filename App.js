@@ -10,6 +10,8 @@ import { ProfileProvider, useProfile } from './src/context/ProfileContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { CountryProvider } from './src/context/CountryContext';
 import { AppAlertProvider } from './src/context/AppAlertContext';
+import { TourProvider, useTourTarget } from './src/context/TourContext';
+import TourOverlay from './src/components/TourOverlay';
 import AuthScreen from './src/screens/AuthScreen';
 import OnboardingFlow from './src/screens/onboarding/OnboardingFlow';
 import HomeScreen from './src/screens/HomeScreen';
@@ -59,6 +61,8 @@ function useActiveTabAnimation(activeTab) {
 
 function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl }) {
   const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
+  const navRef = useTourTarget('nav-bar');
+  const profileRef = useTourTarget('profile-avatar');
 
   return (
     <View style={styles.desktopRoot}>
@@ -68,7 +72,7 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
           <Text style={styles.sidebarBrandText}>Nutriva</Text>
         </View>
 
-        <View style={styles.sidebarNav}>
+        <View style={styles.sidebarNav} ref={navRef}>
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
@@ -97,6 +101,7 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
         <Hoverable scaleTo={1}>
           {({ hovered }) => (
             <TouchableOpacity
+              ref={profileRef}
               style={[styles.sidebarProfile, activeTab === 'profile' && styles.sidebarItemActive, activeTab !== 'profile' && hovered && styles.sidebarItemHovered]}
               onPress={() => setActiveTab('profile')}
               accessibilityRole="button"
@@ -158,6 +163,8 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
 function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl }) {
   const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
   const onProfile = activeTab === 'profile';
+  const navRef = useTourTarget('nav-bar');
+  const profileRef = useTourTarget('profile-avatar');
 
   return (
     <SafeAreaView style={styles.flex}>
@@ -172,6 +179,7 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
 
         <Hoverable scaleTo={1.08}>
           <TouchableOpacity
+            ref={profileRef}
             style={[styles.profileCircle, onProfile && styles.profileCircleActive]}
             onPress={() => setActiveTab('profile')}
             activeOpacity={0.8}
@@ -195,7 +203,7 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
         </Animated.View>
       </View>
 
-      <View style={styles.tabBar}>
+      <View style={styles.tabBar} ref={navRef}>
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -293,8 +301,11 @@ export default function App() {
           <ThemeProvider>
             <AppAlertProvider>
               <CountryProvider>
-                <ThemedStatusBar />
-                <Root />
+                <TourProvider>
+                  <ThemedStatusBar />
+                  <Root />
+                  <TourOverlay />
+                </TourProvider>
               </CountryProvider>
             </AppAlertProvider>
           </ThemeProvider>

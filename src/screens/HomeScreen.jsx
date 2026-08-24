@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../theme/ThemeContext';
+import { useTour, useTourTarget } from '../context/TourContext';
 import Hoverable from '../components/Hoverable';
 import useResponsive from '../hooks/useResponsive';
 import { lighten } from '../utils/color';
@@ -58,6 +59,7 @@ function dayOfYear(date) {
 
 function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle, tile }) {
   const entrance = useRef(new Animated.Value(0)).current;
+  const tourRef = useTourTarget(`shortcut-${shortcut.tab}`);
 
   useEffect(() => {
     Animated.timing(entrance, {
@@ -81,6 +83,7 @@ function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle, til
       <Hoverable scaleTo={1.02}>
         {({ hovered }) => (
           <TouchableOpacity
+            ref={tourRef}
             style={[styles.card, tile && styles.cardTile, hovered && styles.cardHovered]}
             onPress={onPress}
             activeOpacity={0.85}
@@ -134,10 +137,18 @@ export default function HomeScreen({ onNavigate }) {
   const { colors } = useTheme();
   const { isTablet, isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { notifyHomeReady } = useTour();
 
   const username = profile?.username;
   const hourGreeting = useMemo(() => greetingForHour(new Date().getHours()), []);
   const dailyTip = useMemo(() => TIPS[dayOfYear(new Date()) % TIPS.length], []);
+
+  useEffect(() => {
+    // Se espera a que las tarjetas terminen su animación de entrada antes de
+    // medir su posición para el tour (si no, se mide a mitad de camino).
+    const timer = setTimeout(() => notifyHomeReady(), 700);
+    return () => clearTimeout(timer);
+  }, [notifyHomeReady]);
 
   if (isDesktop) {
     return (
