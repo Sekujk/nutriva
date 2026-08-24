@@ -20,7 +20,7 @@ const SUB_SCREENS = {
   contrasena: ChangePasswordScreen,
 };
 
-export default function ProfileArea() {
+export default function ProfileArea({ onNavigate: onNavigateApp }) {
   const [subScreen, setSubScreen] = useState(null);
   const { isDesktop } = useResponsive();
 
@@ -58,7 +58,7 @@ export default function ProfileArea() {
   return (
     <Animated.View style={[styles.flex, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}>
       <View style={[styles.inner, isDesktop && styles.innerDesktop]}>
-        {SubScreen ? <SubScreen onBack={() => setSubScreen(null)} /> : <ProfileMenuScreen onNavigate={setSubScreen} />}
+        {SubScreen ? <SubScreen onBack={() => setSubScreen(null)} /> : <ProfileMenuScreen onNavigate={setSubScreen} onNavigateApp={onNavigateApp} />}
       </View>
     </Animated.View>
   );
