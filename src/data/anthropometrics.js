@@ -35,3 +35,23 @@ export const computeIdealWeightAnthropometric = (sex, heightCm) => {
 // Peso ajustado: solo tiene sentido si el paciente tiene sobrepeso u
 // obesidad (peso actual por encima del ideal).
 export const computeAdjustedWeight = (actualWeightKg, idealWeightKg) => idealWeightKg + (actualWeightKg - idealWeightKg) * 0.25;
+
+// ICC (indice cintura-cadera): distribucion de grasa, androide (cintura) vs
+// ginecoide (cadera), y riesgo cardiometabolico asociado.
+export const computeICC = (waistCm, hipCm) => waistCm / hipCm;
+
+export const classifyICC = (sex, icc) => {
+  const thresholds = sex === 'M' ? { low: 0.95, mid: 1 } : { low: 0.8, mid: 0.85 };
+  if (icc <= thresholds.low) return { label: 'Bajo riesgo', key: 'bajo' };
+  if (icc <= thresholds.mid) return { label: 'Mediano riesgo', key: 'mediano' };
+  return { label: 'Alto riesgo', key: 'alto' };
+};
+
+// Riesgo cardiometabolico solo por circunferencia de cintura (no necesita
+// la cadera).
+export const classifyWaistRisk = (sex, waistCm) => {
+  const thresholds = sex === 'M' ? { normal: 95, elevated: 101 } : { normal: 82, elevated: 87 };
+  if (waistCm < thresholds.normal) return { label: 'Normal (sin riesgo)', key: 'normal' };
+  if (waistCm <= thresholds.elevated) return { label: 'Riesgo elevado', key: 'elevado' };
+  return { label: 'Riesgo muy elevado', key: 'muyElevado' };
+};

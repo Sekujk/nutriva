@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import { getFormula } from '../data/tmbFormulas';
-import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight } from '../data/anthropometrics';
+import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight, computeICC, classifyICC, classifyWaistRisk } from '../data/anthropometrics';
 import useResponsive from '../hooks/useResponsive';
 
 function fmt(n) {
@@ -105,6 +105,10 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
   const idealWeightAnthro = hasPatientData && calc.height >= 150 ? computeIdealWeightAnthropometric(calc.sex, calc.height) : null;
   const showsAdjustedWeight = imcCategory && (imcCategory.key === 'sobrepeso' || imcCategory.key.startsWith('obesidad'));
   const adjustedWeight = showsAdjustedWeight ? computeAdjustedWeight(calc.weight, idealWeightByImc) : null;
+
+  const icc = hasPatientData && calc.waist_cm > 0 && calc.hip_cm > 0 ? computeICC(calc.waist_cm, calc.hip_cm) : null;
+  const iccRisk = icc !== null ? classifyICC(calc.sex, icc) : null;
+  const waistRisk = hasPatientData && calc.waist_cm > 0 ? classifyWaistRisk(calc.sex, calc.waist_cm) : null;
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
@@ -211,6 +215,33 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
                       <Text style={styles.tableValue}>{adjustedWeight.toFixed(1)} kg</Text>
                     </View>
                   )}
+                </View>
+              </RevealRow>
+            )}
+
+            {waistRisk !== null && (
+              <RevealRow index={rows.length + 3}>
+                <View style={styles.tableCard}>
+                  <Text style={styles.cardEyebrow}>Riesgo cardiometabólico</Text>
+
+                  {icc !== null && (
+                    <View style={styles.imcRow}>
+                      <View>
+                        <Text style={styles.imcValue}>{icc.toFixed(2)}</Text>
+                        <Text style={styles.imcUnit}>ICC</Text>
+                      </View>
+                      <View style={[styles.imcBadge, styles[`riskBadge_${iccRisk.key}`]]}>
+                        <Text style={[styles.imcBadgeText, styles[`riskBadgeText_${iccRisk.key}`]]}>{iccRisk.label}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  <View style={[styles.tableRow, styles.tableRowLast]}>
+                    <Text style={styles.tableLabel}>Circunferencia de cintura</Text>
+                    <View style={[styles.imcBadge, styles[`riskBadge_${waistRisk.key}`]]}>
+                      <Text style={[styles.imcBadgeText, styles[`riskBadgeText_${waistRisk.key}`]]}>{waistRisk.label}</Text>
+                    </View>
+                  </View>
                 </View>
               </RevealRow>
             )}
@@ -342,4 +373,17 @@ const getStyles = (colors) => StyleSheet.create({
   imcBadgeText_obesidadI: { color: colors.danger },
   imcBadgeText_obesidadII: { color: colors.danger },
   imcBadgeText_obesidadIII: { color: colors.danger },
+
+  riskBadge_bajo: { backgroundColor: colors.successSoft },
+  riskBadge_mediano: { backgroundColor: colors.warningSoft },
+  riskBadge_alto: { backgroundColor: colors.dangerSoft },
+  riskBadge_normal: { backgroundColor: colors.successSoft },
+  riskBadge_elevado: { backgroundColor: colors.warningSoft },
+  riskBadge_muyElevado: { backgroundColor: colors.dangerSoft },
+  riskBadgeText_bajo: { color: colors.success },
+  riskBadgeText_mediano: { color: colors.warning },
+  riskBadgeText_alto: { color: colors.danger },
+  riskBadgeText_normal: { color: colors.success },
+  riskBadgeText_elevado: { color: colors.warning },
+  riskBadgeText_muyElevado: { color: colors.danger },
 });
