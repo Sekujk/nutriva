@@ -77,12 +77,8 @@ export const ProfileProvider = ({ children }) => {
     return avatarUrl;
   };
 
-  if (!loaded) {
-    return null;
-  }
-
   return (
-    <ProfileContext.Provider value={{ profile, updateProfile, completeOnboarding, uploadAvatar }}>
+    <ProfileContext.Provider value={{ profile, profileLoaded: loaded, updateProfile, completeOnboarding, uploadAvatar }}>
       {children}
     </ProfileContext.Provider>
   );
