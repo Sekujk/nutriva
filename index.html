@@ -31,14 +31,22 @@
     <title>Nutriva</title>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
+      /* Valores por defecto (tema claro, paleta verde); el script de abajo
+         los sobreescribe según el tema que el usuario ya tenía guardado,
+         antes de que se pinte nada. */
+      :root {
+        --splash-bg: #ffffff;
+        --splash-text: #152018;
+        --splash-primary: #5c8d72;
+        --splash-primary-dark: #3c6350;
+      }
       /* These styles make the body full-height */
       html,
       body {
         height: 100%;
-        /* Mismo verde de marca que el splash: si React vacía y vuelve a
-           llenar #root en el mismo instante, lo que se asoma por debajo es
-           este color, nunca blanco. */
-        background-color: #5c8d72;
+        /* Si React vacía y vuelve a llenar #root en el mismo instante, lo
+           que se asoma por debajo es este color, nunca blanco. */
+        background-color: var(--splash-bg);
       }
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {
@@ -49,7 +57,7 @@
         display: flex;
         height: 100%;
         flex: 1;
-        background-color: #5c8d72;
+        background-color: var(--splash-bg);
       }
       /* Edge/IE agregan su propio botón de "mostrar contraseña" dentro del
          input, que se superpone al ícono del ojo de la app. Lo ocultamos
@@ -62,7 +70,9 @@
       /* Splash estático: se ve al instante, antes de que cargue el bundle
          de React. Vive dentro de #root a propósito: en cuanto React monta,
          reemplaza el contenido de #root y este splash desaparece solo, sin
-         necesitar JS propio para quitarlo. */
+         necesitar JS propio para quitarlo. Usa las mismas variables que el
+         fondo de la página, así que nunca hay un cambio de color al pasar
+         del splash al loader real. */
       #initial-loader {
         width: 100%;
         height: 100%;
@@ -71,13 +81,13 @@
         align-items: center;
         justify-content: center;
         gap: 16px;
-        background: #5c8d72;
+        background: var(--splash-bg);
       }
       #initial-loader .loader-badge {
         width: 64px;
         height: 64px;
         border-radius: 32px;
-        background: linear-gradient(135deg, #3c6350, #5c8d72);
+        background: linear-gradient(135deg, var(--splash-primary-dark), var(--splash-primary));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -90,14 +100,14 @@
         font-size: 18px;
         font-weight: 700;
         letter-spacing: 3px;
-        color: #ffffff;
+        color: var(--splash-text);
       }
       #initial-loader .loader-ring {
         width: 22px;
         height: 22px;
         border-radius: 50%;
-        border: 2.5px solid rgba(255, 255, 255, 0.35);
-        border-top-color: #ffffff;
+        border: 2.5px solid rgba(128, 128, 128, 0.25);
+        border-top-color: var(--splash-primary);
         animation: loader-spin 0.8s linear infinite;
       }
       @keyframes loader-pulse {
@@ -108,6 +118,46 @@
         to { transform: rotate(360deg); }
       }
     </style>
+    <script>
+      // Aplica el tema/paleta ya guardados (o el del sistema si no hay nada
+      // guardado) ANTES de pintar, para que el splash salga del color
+      // correcto desde el primer frame en vez de saltar de un color a otro
+      // cuando React arranca. Los mismos valores que src/theme/colors.js.
+      (function () {
+        try {
+          var mode = window.localStorage.getItem('nutriva:theme-mode');
+          var paletteKey = window.localStorage.getItem('nutriva:theme-palette') || 'green';
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = mode === 'dark' || (mode !== 'light' && prefersDark);
+          var scheme = isDark ? 'dark' : 'light';
+
+          var NEUTRAL = {
+            light: { bg: '#ffffff', text: '#152018' },
+            dark: { bg: '#121317', text: '#f2f3f5' },
+          };
+          var PALETTES = {
+            green: { light: '#5c8d72', dark: '#8fc4a3', badgeDark: '#3c6350' },
+            pink: { light: '#c17a94', dark: '#e3a8bd', badgeDark: '#7a4a5c' },
+            purple: { light: '#8b7bc4', dark: '#b8abe0', badgeDark: '#5a4d8a' },
+            blue: { light: '#6c93b8', dark: '#9dc0dd', badgeDark: '#436079' },
+            brown: { light: '#a17a55', dark: '#cba077', badgeDark: '#6b5138' },
+          };
+
+          var neutral = NEUTRAL[scheme];
+          var chosenPalette = PALETTES[paletteKey] || PALETTES.green;
+          var primary = chosenPalette[scheme];
+
+          var root = document.documentElement.style;
+          root.setProperty('--splash-bg', neutral.bg);
+          root.setProperty('--splash-text', neutral.text);
+          root.setProperty('--splash-primary', primary);
+          root.setProperty('--splash-primary-dark', chosenPalette.badgeDark);
+        } catch (e) {
+          // localStorage bloqueado o similar: se queda con los valores por
+          // defecto del CSS (tema claro, paleta verde).
+        }
+      })();
+    </script>
   <meta name="theme-color" content="#5c8d72">
 <link rel="icon" href="/favicon.ico" /></head>
 
@@ -122,6 +172,6 @@
         <div class="loader-ring"></div>
       </div>
     </div>
-  <script src="/_expo/static/js/web/index-9a3f6b82fbf8431ce53d33b0b9d24955.js" defer></script>
+  <script src="/_expo/static/js/web/index-c58d8c5f6cae21f25a17feb520890570.js" defer></script>
 </body>
 </html>
