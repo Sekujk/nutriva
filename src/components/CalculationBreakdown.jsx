@@ -5,6 +5,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import { getFormula } from '../data/tmbFormulas';
 import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight, computeICC, classifyICC, classifyWaistRisk } from '../data/anthropometrics';
+import { getIdealCMB, getCMBAdjustment, computeAdjustedCMB, computePercentCMB, classifyCMBPercent } from '../data/cmb';
 import useResponsive from '../hooks/useResponsive';
 
 function fmt(n) {
@@ -109,6 +110,12 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
   const icc = hasPatientData && calc.waist_cm > 0 && calc.hip_cm > 0 ? computeICC(calc.waist_cm, calc.hip_cm) : null;
   const iccRisk = icc !== null ? classifyICC(calc.sex, icc) : null;
   const waistRisk = hasPatientData && calc.waist_cm > 0 ? classifyWaistRisk(calc.sex, calc.waist_cm) : null;
+
+  const cmbIdeal = hasPatientData && calc.age > 0 ? getIdealCMB(calc.age, calc.sex) : null;
+  const cmbAdjustmentCm = hasPatientData && imcCategory ? getCMBAdjustment(imcCategory.key, calc.sex, calc.hospitalized) : 0;
+  const cmbAdjusted = calc.cmb_cm > 0 ? computeAdjustedCMB(calc.cmb_cm, cmbAdjustmentCm) : null;
+  const cmbPercent = cmbAdjusted !== null && cmbIdeal ? computePercentCMB(cmbAdjusted, cmbIdeal) : null;
+  const cmbInterpretation = cmbPercent !== null ? classifyCMBPercent(cmbPercent) : null;
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
@@ -248,6 +255,34 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
                       <Text style={[styles.imcBadgeText, styles[`riskBadgeText_${waistRisk.key}`]]}>{waistRisk.label}</Text>
                     </View>
                   </View>
+                </View>
+              </RevealRow>
+            )}
+
+            {calc.cmb_cm > 0 && (
+              <RevealRow index={rows.length + 4}>
+                <View style={styles.tableCard}>
+                  <Text style={styles.cardEyebrow}>% CMB</Text>
+                  {cmbIdeal === null ? (
+                    <Text style={styles.legacyNote}>No hay valor de referencia de CMB para esta edad.</Text>
+                  ) : (
+                    <>
+                      {cmbAdjustmentCm !== 0 && (
+                        <Text style={styles.cmbAdjustmentNote}>
+                          CMB ajustada: {calc.cmb_cm} {cmbAdjustmentCm > 0 ? '+' : ''}{cmbAdjustmentCm} = {cmbAdjusted.toFixed(1)} cm
+                        </Text>
+                      )}
+                      <View style={styles.imcRow}>
+                        <View>
+                          <Text style={styles.imcValue}>{cmbPercent.toFixed(0)}%</Text>
+                          <Text style={styles.imcUnit}>vs. ideal {cmbIdeal} cm</Text>
+                        </View>
+                        <View style={[styles.imcBadge, styles[`cmbBadge_${cmbInterpretation.key}`]]}>
+                          <Text style={[styles.imcBadgeText, styles[`cmbBadgeText_${cmbInterpretation.key}`]]}>{cmbInterpretation.label}</Text>
+                        </View>
+                      </View>
+                    </>
+                  )}
                 </View>
               </RevealRow>
             )}
@@ -393,4 +428,14 @@ const getStyles = (colors) => StyleSheet.create({
   riskBadgeText_normal: { color: colors.success },
   riskBadgeText_elevado: { color: colors.warning },
   riskBadgeText_muyElevado: { color: colors.danger },
+
+  cmbAdjustmentNote: { fontSize: 11.5, color: colors.textFaint, marginBottom: 10, lineHeight: 16 },
+  cmbBadge_normal: { backgroundColor: colors.successSoft },
+  cmbBadge_leve: { backgroundColor: colors.warningSoft },
+  cmbBadge_moderada: { backgroundColor: colors.warningSoft },
+  cmbBadge_severa: { backgroundColor: colors.dangerSoft },
+  cmbBadgeText_normal: { color: colors.success },
+  cmbBadgeText_leve: { color: colors.warning },
+  cmbBadgeText_moderada: { color: colors.warning },
+  cmbBadgeText_severa: { color: colors.danger },
 });
