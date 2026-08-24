@@ -7,8 +7,9 @@ import { useAppAlert } from '../context/AppAlertContext';
 import { supabase } from '../config/supabase';
 import useResponsive from '../hooks/useResponsive';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
-import { ACTIVITY_FACTORS, TMB_FORMULAS } from '../data/tmbFormulas';
+import { TMB_FORMULAS } from '../data/tmbFormulas';
 import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight, computeICC, classifyICC, classifyWaistRisk } from '../data/anthropometrics';
+import { getActivityOptions, STRESS_FACTORS, getStressCategory } from '../data/getFactors';
 
 const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
@@ -78,7 +79,10 @@ export default function CalculatorScreen() {
   const [age, setAge] = useState('');
   const [waist, setWaist] = useState('');
   const [hip, setHip] = useState('');
-  const [activityKey, setActivityKey] = useState('moderado');
+  const [hospitalized, setHospitalized] = useState(false);
+  const [activityKey, setActivityKey] = useState('moderada');
+  const [stressKey, setStressKey] = useState('noAplica');
+  const [stressValue, setStressValue] = useState(1);
   const [formulaKey, setFormulaKey] = useState('mifflin');
   const [tmbOverride, setTmbOverride] = useState(null);
   const [getOverride, setGetOverride] = useState(null);
@@ -87,15 +91,35 @@ export default function CalculatorScreen() {
   const w = parseNum(weight);
   const h = parseNum(height);
   const a = parseInt(age, 10);
-  const activity = ACTIVITY_FACTORS.find((f) => f.key === activityKey);
+  const activityOptions = getActivityOptions(hospitalized, sex);
+  const activity = activityOptions.find((f) => f.key === activityKey) || activityOptions[0];
+  const stressCategory = getStressCategory(stressKey);
   const formula = TMB_FORMULAS.find((f) => f.key === formulaKey);
 
   const hasInputs = w > 0 && h > 0 && a > 0;
   const autoTmb = hasInputs ? formula.compute(sex, w, h, a) : null;
   const tmb = tmbOverride !== null && tmbOverride !== '' ? parseNum(tmbOverride) : autoTmb;
 
-  const autoGet = tmb !== null ? tmb * activity.value : null;
+  const autoGet = tmb !== null ? tmb * activity.value * stressValue : null;
   const get = getOverride !== null && getOverride !== '' ? parseNum(getOverride) : autoGet;
+  const kcalPerKg = get !== null && w > 0 ? get / w : null;
+
+  // Cambiar sexo u hospitalizacion cambia la lista de opciones de
+  // actividad disponible, asi que el key elegido puede dejar de existir.
+  const handleSetSex = (nextSex) => {
+    setSex(nextSex);
+    setActivityKey(getActivityOptions(hospitalized, nextSex)[0].key);
+  };
+
+  const handleSetHospitalized = (nextHospitalized) => {
+    setHospitalized(nextHospitalized);
+    setActivityKey(getActivityOptions(nextHospitalized, sex)[0].key);
+  };
+
+  const handleSetStressCategory = (key) => {
+    setStressKey(key);
+    setStressValue(getStressCategory(key).options[0].value);
+  };
 
   const imc = w > 0 && h > 0 ? computeIMC(w, h) : null;
   const imcCategory = imc !== null ? classifyIMC(imc) : null;
@@ -122,9 +146,12 @@ export default function CalculatorScreen() {
         age: a,
         waist_cm: waistCm > 0 ? waistCm : null,
         hip_cm: hipCm > 0 ? hipCm : null,
+        hospitalized,
         activity_key: activityKey,
         activity_label: activity.label,
         activity_factor: activity.value,
+        stress_key: stressKey,
+        stress_factor: stressValue,
         formula_key: formulaKey,
         formula_label: formula.label,
         tmb,
@@ -149,7 +176,7 @@ export default function CalculatorScreen() {
             <TouchableOpacity
               key={opt.key}
               style={[styles.sexButton, sex === opt.key && styles.sexButtonActive]}
-              onPress={() => setSex(opt.key)}
+              onPress={() => handleSetSex(opt.key)}
               accessibilityRole="radio"
               accessibilityState={{ selected: sex === opt.key }}
               accessibilityLabel={opt.label}
@@ -260,8 +287,23 @@ export default function CalculatorScreen() {
       <View style={styles.stepCard}>
         <StepHeader number="3" icon="walk-outline" title="Nivel de actividad" colors={colors} styles={styles} />
 
+        <View style={styles.sexRow}>
+          {[{ key: false, label: 'No hospitalizado' }, { key: true, label: 'Hospitalizado' }].map((opt) => (
+            <TouchableOpacity
+              key={String(opt.key)}
+              style={[styles.sexButton, hospitalized === opt.key && styles.sexButtonActive]}
+              onPress={() => handleSetHospitalized(opt.key)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: hospitalized === opt.key }}
+              accessibilityLabel={opt.label}
+            >
+              <Text style={[styles.sexButtonText, hospitalized === opt.key && styles.sexButtonTextActive]}>{opt.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={styles.chipsWrap}>
-          {ACTIVITY_FACTORS.map((f) => (
+          {activityOptions.map((f) => (
             <TouchableOpacity
               key={f.key}
               style={[styles.chip, activityKey === f.key && styles.chipActive]}
@@ -276,6 +318,49 @@ export default function CalculatorScreen() {
             </TouchableOpacity>
           ))}
         </View>
+      </View>
+
+      <View style={styles.stepCard}>
+        <StepHeader number="4" icon="pulse-outline" title="Factor de estrés (opcional)" colors={colors} styles={styles} />
+
+        <View style={styles.chipsWrap}>
+          {STRESS_FACTORS.map((s) => (
+            <TouchableOpacity
+              key={s.key}
+              style={[styles.chip, stressKey === s.key && styles.chipActive]}
+              onPress={() => handleSetStressCategory(s.key)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: stressKey === s.key }}
+              accessibilityLabel={s.label}
+            >
+              <Text style={[styles.chipText, stressKey === s.key && styles.chipTextActive]}>
+                {s.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {stressCategory.options.length > 1 && (
+          <>
+            <Text style={styles.optionalLabel}>Valor</Text>
+            <View style={styles.chipsWrap}>
+              {stressCategory.options.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.chip, stressValue === opt.value && styles.chipActive]}
+                  onPress={() => setStressValue(opt.value)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: stressValue === opt.value }}
+                  accessibilityLabel={opt.label}
+                >
+                  <Text style={[styles.chipText, stressValue === opt.value && styles.chipTextActive]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
       </View>
     </>
   );
@@ -314,7 +399,9 @@ export default function CalculatorScreen() {
           <EditableResultRow
             icon="flash"
             label="GET (Gasto Energético Total)"
-            formula={`TMB × ${activity.value} (${activity.label})`}
+            formula={stressValue !== 1
+              ? `TMB × ${activity.value} (${activity.label}) × ${stressValue} (${stressCategory.label})`
+              : `TMB × ${activity.value} (${activity.label})`}
             value={autoGet}
             unit="kcal/día"
             override={getOverride}
@@ -323,6 +410,13 @@ export default function CalculatorScreen() {
             colors={colors}
             styles={styles}
           />
+
+          {kcalPerKg !== null && (
+            <View style={styles.kcalKgRow}>
+              <Ionicons name="scale-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.kcalKgText}>{kcalPerKg.toFixed(1)} kcal/kg</Text>
+            </View>
+          )}
 
           <TouchableOpacity
             style={styles.saveButton}
@@ -607,6 +701,8 @@ const getStyles = (colors) => StyleSheet.create({
   resultUnit: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
   overrideHint: { fontSize: 11, color: colors.textFaint, marginTop: 6, marginLeft: 48, lineHeight: 15 },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 18 },
+  kcalKgRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, marginLeft: 48 },
+  kcalKgText: { fontSize: 12.5, color: colors.textMuted, fontWeight: '600' },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',

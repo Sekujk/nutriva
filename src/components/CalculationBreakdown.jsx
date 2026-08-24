@@ -175,14 +175,20 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
                   </View>
                   <Text style={styles.resultTitle}>GET · Gasto Energético Total</Text>
                 </View>
-                <Text style={styles.stepGeneric}>TMB × factor de actividad</Text>
+                <Text style={styles.stepGeneric}>
+                  {calc.stress_factor && calc.stress_factor !== 1 ? 'TMB × factor de actividad × factor de estrés' : 'TMB × factor de actividad'}
+                </Text>
                 <Text style={styles.stepSubstituted}>
                   {fmt(calc.tmb)} × {calc.activity_factor ?? '?'} {calc.activity_label ? `(${calc.activity_label})` : ''}
+                  {calc.stress_factor && calc.stress_factor !== 1 ? ` × ${calc.stress_factor}` : ''}
                 </Text>
                 <View style={styles.resultValueRow}>
                   <CountUp target={calc.get} style={styles.resultValue} />
                   <Text style={styles.resultUnit}>kcal/día</Text>
                 </View>
+                {Number.isFinite(calc.get) && calc.weight > 0 && (
+                  <Text style={styles.kcalKgNote}>{(calc.get / calc.weight).toFixed(1)} kcal/kg</Text>
+                )}
               </View>
             </RevealRow>
 
@@ -353,6 +359,7 @@ const getStyles = (colors) => StyleSheet.create({
   resultValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 12 },
   resultValue: { fontSize: 30, fontFamily: FONT_DISPLAY_BOLD, color: colors.primary },
   resultUnit: { fontSize: 12.5, color: colors.textMuted, fontWeight: '600' },
+  kcalKgNote: { fontSize: 11.5, color: colors.textFaint, marginTop: 6, fontWeight: '600' },
 
   legacyNote: { fontSize: 12, color: colors.textFaint, textAlign: 'center', paddingVertical: 8, lineHeight: 17 },
 
