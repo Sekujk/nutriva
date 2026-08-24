@@ -8,6 +8,7 @@ import { supabase } from '../config/supabase';
 import useResponsive from '../hooks/useResponsive';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD, FONT_DISPLAY_ITALIC } from '../theme/typography';
 import { ACTIVITY_FACTORS, TMB_FORMULAS } from '../data/tmbFormulas';
+import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight } from '../data/anthropometrics';
 
 const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
@@ -93,6 +94,13 @@ export default function CalculatorScreen() {
 
   const autoGet = tmb !== null ? tmb * activity.value : null;
   const get = getOverride !== null && getOverride !== '' ? parseNum(getOverride) : autoGet;
+
+  const imc = w > 0 && h > 0 ? computeIMC(w, h) : null;
+  const imcCategory = imc !== null ? classifyIMC(imc) : null;
+  const idealWeightByImc = h > 0 ? computeIdealWeightByIMC(h) : null;
+  const idealWeightAnthro = h >= 150 ? computeIdealWeightAnthropometric(sex, h) : null;
+  const showsAdjustedWeight = imcCategory && (imcCategory.key === 'sobrepeso' || imcCategory.key.startsWith('obesidad'));
+  const adjustedWeight = showsAdjustedWeight && w > 0 && idealWeightByImc !== null ? computeAdjustedWeight(w, idealWeightByImc) : null;
 
   const handleSave = async () => {
     if (!hasInputs || tmb === null || get === null) return;
@@ -297,6 +305,39 @@ export default function CalculatorScreen() {
         <View style={styles.emptyCard}>
           <Ionicons name="calculator-outline" size={28} color={colors.textFaint} />
           <Text style={styles.empty}>Completa peso, talla y edad para ver el cálculo.</Text>
+        </View>
+      )}
+
+      {imc !== null && (
+        <View style={styles.anthroCard}>
+          <Text style={styles.sectionTitle}>IMC y peso ideal</Text>
+
+          <View style={styles.imcRow}>
+            <View>
+              <Text style={styles.imcValue}>{imc.toFixed(1)}</Text>
+              <Text style={styles.imcUnit}>kg/m²</Text>
+            </View>
+            <View style={[styles.imcBadge, styles[`imcBadge_${imcCategory.key}`]]}>
+              <Text style={[styles.imcBadgeText, styles[`imcBadgeText_${imcCategory.key}`]]}>{imcCategory.label}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.anthroRow}>
+            <Text style={styles.anthroLabel}>Peso ideal (por IMC)</Text>
+            <Text style={styles.anthroValue}>{idealWeightByImc !== null ? `${idealWeightByImc.toFixed(1)} kg` : '—'}</Text>
+          </View>
+          <View style={styles.anthroRow}>
+            <Text style={styles.anthroLabel}>Peso ideal (antropométrico)</Text>
+            <Text style={styles.anthroValue}>{idealWeightAnthro !== null ? `${idealWeightAnthro.toFixed(1)} kg` : 'Solo desde 150 cm'}</Text>
+          </View>
+          {showsAdjustedWeight && (
+            <View style={styles.anthroRow}>
+              <Text style={styles.anthroLabel}>Peso ajustado</Text>
+              <Text style={styles.anthroValue}>{adjustedWeight !== null ? `${adjustedWeight.toFixed(1)} kg` : '—'}</Text>
+            </View>
+          )}
         </View>
       )}
     </>
@@ -518,4 +559,37 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
   },
   empty: { textAlign: 'center', color: colors.textMuted, fontSize: 13, paddingHorizontal: 24 },
+
+  anthroCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 14,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  imcRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  imcValue: { fontSize: 30, fontFamily: FONT_DISPLAY_BOLD, color: colors.text },
+  imcUnit: { fontSize: 11, color: colors.textFaint, fontWeight: '600' },
+  imcBadge: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  imcBadgeText: { fontSize: 13, fontWeight: '700' },
+  imcBadge_bajoPeso: { backgroundColor: colors.warningSoft },
+  imcBadge_normal: { backgroundColor: colors.successSoft },
+  imcBadge_sobrepeso: { backgroundColor: colors.warningSoft },
+  imcBadge_obesidadI: { backgroundColor: colors.dangerSoft },
+  imcBadge_obesidadII: { backgroundColor: colors.dangerSoft },
+  imcBadge_obesidadIII: { backgroundColor: colors.dangerSoft },
+  imcBadgeText_bajoPeso: { color: colors.warning },
+  imcBadgeText_normal: { color: colors.success },
+  imcBadgeText_sobrepeso: { color: colors.warning },
+  imcBadgeText_obesidadI: { color: colors.danger },
+  imcBadgeText_obesidadII: { color: colors.danger },
+  imcBadgeText_obesidadIII: { color: colors.danger },
+
+  anthroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
+  anthroLabel: { fontSize: 13, color: colors.textMuted, flex: 1, marginRight: 10 },
+  anthroValue: { fontSize: 14, fontFamily: FONT_DISPLAY_BOLD, color: colors.text },
 });

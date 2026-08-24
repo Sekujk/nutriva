@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import { getFormula } from '../data/tmbFormulas';
+import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnthropometric, computeAdjustedWeight } from '../data/anthropometrics';
 import useResponsive from '../hooks/useResponsive';
 
 function fmt(n) {
@@ -98,6 +99,13 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
     );
   }
 
+  const imc = hasPatientData ? computeIMC(calc.weight, calc.height) : null;
+  const imcCategory = imc !== null ? classifyIMC(imc) : null;
+  const idealWeightByImc = hasPatientData ? computeIdealWeightByIMC(calc.height) : null;
+  const idealWeightAnthro = hasPatientData && calc.height >= 150 ? computeIdealWeightAnthropometric(calc.sex, calc.height) : null;
+  const showsAdjustedWeight = imcCategory && (imcCategory.key === 'sobrepeso' || imcCategory.key.startsWith('obesidad'));
+  const adjustedWeight = showsAdjustedWeight ? computeAdjustedWeight(calc.weight, idealWeightByImc) : null;
+
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={onClose}>
       <Animated.View style={[styles.overlay, isDesktop && styles.overlayDesktop, { opacity: overlayOpacity }]}>
@@ -173,6 +181,39 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
                 </View>
               </View>
             </RevealRow>
+
+            {imc !== null && (
+              <RevealRow index={rows.length + 2}>
+                <View style={styles.tableCard}>
+                  <Text style={styles.cardEyebrow}>IMC y peso ideal</Text>
+
+                  <View style={styles.imcRow}>
+                    <View>
+                      <Text style={styles.imcValue}>{imc.toFixed(1)}</Text>
+                      <Text style={styles.imcUnit}>kg/m²</Text>
+                    </View>
+                    <View style={[styles.imcBadge, styles[`imcBadge_${imcCategory.key}`]]}>
+                      <Text style={[styles.imcBadgeText, styles[`imcBadgeText_${imcCategory.key}`]]}>{imcCategory.label}</Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.tableRow]}>
+                    <Text style={styles.tableLabel}>Peso ideal (por IMC)</Text>
+                    <Text style={styles.tableValue}>{idealWeightByImc.toFixed(1)} kg</Text>
+                  </View>
+                  <View style={[styles.tableRow]}>
+                    <Text style={styles.tableLabel}>Peso ideal (antropométrico)</Text>
+                    <Text style={styles.tableValue}>{idealWeightAnthro !== null ? `${idealWeightAnthro.toFixed(1)} kg` : 'Solo desde 150 cm'}</Text>
+                  </View>
+                  {showsAdjustedWeight && (
+                    <View style={[styles.tableRow, styles.tableRowLast]}>
+                      <Text style={styles.tableLabel}>Peso ajustado</Text>
+                      <Text style={styles.tableValue}>{adjustedWeight.toFixed(1)} kg</Text>
+                    </View>
+                  )}
+                </View>
+              </RevealRow>
+            )}
 
             {!hasPatientData && (
               <Text style={styles.legacyNote}>
@@ -283,4 +324,22 @@ const getStyles = (colors) => StyleSheet.create({
   resultUnit: { fontSize: 12.5, color: colors.textMuted, fontWeight: '600' },
 
   legacyNote: { fontSize: 12, color: colors.textFaint, textAlign: 'center', paddingVertical: 8, lineHeight: 17 },
+
+  imcRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  imcValue: { fontSize: 26, fontFamily: FONT_DISPLAY_BOLD, color: colors.text },
+  imcUnit: { fontSize: 10.5, color: colors.textFaint, fontWeight: '600' },
+  imcBadge: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 },
+  imcBadgeText: { fontSize: 12.5, fontWeight: '700' },
+  imcBadge_bajoPeso: { backgroundColor: colors.warningSoft },
+  imcBadge_normal: { backgroundColor: colors.successSoft },
+  imcBadge_sobrepeso: { backgroundColor: colors.warningSoft },
+  imcBadge_obesidadI: { backgroundColor: colors.dangerSoft },
+  imcBadge_obesidadII: { backgroundColor: colors.dangerSoft },
+  imcBadge_obesidadIII: { backgroundColor: colors.dangerSoft },
+  imcBadgeText_bajoPeso: { color: colors.warning },
+  imcBadgeText_normal: { color: colors.success },
+  imcBadgeText_sobrepeso: { color: colors.warning },
+  imcBadgeText_obesidadI: { color: colors.danger },
+  imcBadgeText_obesidadII: { color: colors.danger },
+  imcBadgeText_obesidadIII: { color: colors.danger },
 });
