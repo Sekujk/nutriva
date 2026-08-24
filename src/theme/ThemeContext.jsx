@@ -100,13 +100,9 @@ export const ThemeProvider = ({ children }) => {
   const resolvedScheme = mode === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : mode;
   const colors = buildColors(resolvedScheme, palette);
 
-  if (!loaded) {
-    return null;
-  }
-
   return (
     <ThemeContext.Provider
-      value={{ mode, setThemeMode, palette, setThemePalette, palettes: PALETTES, resolvedScheme, colors }}
+      value={{ mode, setThemeMode, palette, setThemePalette, palettes: PALETTES, resolvedScheme, colors, themeLoaded: loaded }}
     >
       {children}
     </ThemeContext.Provider>
