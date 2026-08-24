@@ -281,11 +281,7 @@ function Root() {
   const fontsLoaded = useAppFonts();
 
   if (isLoading || !fontsLoaded) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <AppLoader colors={colors} styles={styles} />;
   }
 
   if (!session) {
@@ -294,6 +290,34 @@ function Root() {
 
   const needsOnboarding = profile?.onboarding_complete !== true;
   return needsOnboarding ? <OnboardingFlow /> : <MainApp />;
+}
+
+function AppLoader({ colors, styles }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] });
+  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] });
+
+  return (
+    <View style={styles.loaderRoot}>
+      <Animated.View style={{ transform: [{ scale }], opacity }}>
+        <HeroBadge emoji="🦦" size={64} iconSize={30} />
+      </Animated.View>
+      <Text style={styles.loaderWordmark}>NUTRIVA</Text>
+      <ActivityIndicator color={colors.primary} />
+    </View>
+  );
 }
 
 function ThemedStatusBar() {
@@ -324,7 +348,8 @@ export default function App() {
 
 const getStyles = (colors) => StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  loaderRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, gap: 16 },
+  loaderWordmark: { fontSize: 19, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: 3 },
 
   hero: {
     flexDirection: 'row',
