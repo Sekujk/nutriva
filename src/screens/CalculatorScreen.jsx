@@ -704,13 +704,13 @@ export default function CalculatorScreen() {
 
 const getStyles = (colors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { padding: 20, flexGrow: 1, gap: 14 },
+  scrollContent: { padding: 20, flexGrow: 1, gap: 16 },
 
-  tabContentCentered: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 14 },
+  tabContentCentered: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 16 },
   tabContentWide: { width: '100%' },
 
   desktopRow: { flexDirection: 'row', gap: 32, alignItems: 'flex-start' },
-  desktopCol: { flex: 1, gap: 14 },
+  desktopCol: { flex: 1, gap: 16 },
   desktopResultCol: { position: 'sticky', top: 20 },
 
   mainTabRow: {
@@ -751,14 +751,14 @@ const getStyles = (colors) => StyleSheet.create({
   stepCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 18,
+    padding: 22,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 1,
   },
-  stepHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 18 },
   stepBadge: {
     width: 24,
     height: 24,
@@ -793,7 +793,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   editableBadgeText: { fontSize: 11, fontWeight: '700', color: colors.primary },
 
-  sexRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  sexRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
   sexButton: {
     flex: 1,
     flexDirection: 'row',
@@ -816,9 +816,9 @@ const getStyles = (colors) => StyleSheet.create({
   },
   sexButtonText: { fontSize: 14, fontWeight: '600', color: colors.text },
   sexButtonTextActive: { color: colors.background },
-  inputRow: { flexDirection: 'row', gap: 10 },
-  inputCol: { flex: 1 },
-  label: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 6 },
+  inputRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, rowGap: 16 },
+  inputCol: { flexGrow: 1, flexBasis: 100, minWidth: 92 },
+  label: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 8 },
   optionalLabel: { fontSize: 11.5, color: colors.textFaint, fontWeight: '600', marginBottom: 8 },
   estimatorLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
   estimatorLinkText: { fontSize: 12, color: colors.primary, fontWeight: '600', flexShrink: 1 },
@@ -843,7 +843,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   pacienteReadyText: { flex: 1, fontSize: 12.5, color: colors.success, fontWeight: '600' },
 
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -861,8 +861,8 @@ const getStyles = (colors) => StyleSheet.create({
     gap: 8,
     backgroundColor: colors.primarySoft,
     borderRadius: 14,
-    padding: 12,
-    marginBottom: 14,
+    padding: 14,
+    marginBottom: 18,
   },
   hintIcon: { marginTop: 1 },
   hintText: { flex: 1, fontSize: 12.5, color: colors.primary, lineHeight: 17 },
@@ -871,7 +871,7 @@ const getStyles = (colors) => StyleSheet.create({
   resultCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 20,
+    padding: 22,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
@@ -949,7 +949,7 @@ const getStyles = (colors) => StyleSheet.create({
   anthroCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 20,
+    padding: 22,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -998,8 +998,8 @@ const getStyles = (colors) => StyleSheet.create({
   cmbBadgeText_moderada: { color: colors.warning },
   cmbBadgeText_severa: { color: colors.danger },
 
-  anthroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
-  anthroLabel: { fontSize: 13, color: colors.textMuted, flex: 1, marginRight: 10 },
+  anthroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 12 },
+  anthroLabel: { fontSize: 13, color: colors.textMuted, flex: 1 },
   anthroValue: { fontSize: 14, fontFamily: FONT_DISPLAY_BOLD, color: colors.text },
 
   footer: {
