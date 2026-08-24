@@ -18,6 +18,18 @@ const parseNum = (str) => {
   return Number.isFinite(n) ? n : null;
 };
 
+const MAIN_TABS = [
+  { key: 'paciente', label: 'Paciente', icon: 'person-outline' },
+  { key: 'energia', label: 'Energía', icon: 'flame-outline' },
+  { key: 'composicion', label: 'Composición', icon: 'body-outline' },
+];
+
+const SUB_TABS = [
+  { key: 'imc', label: 'IMC' },
+  { key: 'riesgo', label: 'Riesgo' },
+  { key: 'cmb', label: '%CMB' },
+];
+
 function StepHeader({ number, icon, title, colors, styles }) {
   return (
     <View style={styles.stepHeader}>
@@ -26,6 +38,15 @@ function StepHeader({ number, icon, title, colors, styles }) {
       </View>
       <Text style={styles.stepTitle}>{title}</Text>
       <Ionicons name={icon} size={17} color={colors.textFaint} style={styles.stepIcon} />
+    </View>
+  );
+}
+
+function Hint({ children, colors, styles }) {
+  return (
+    <View style={styles.hintCard}>
+      <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
+      <Text style={styles.hintText}>{children}</Text>
     </View>
   );
 }
@@ -68,12 +89,52 @@ function EditableResultRow({ icon, label, formula, value, unit, override, onChan
   );
 }
 
+function TabBar({ tabs, activeKey, onChange, size, colors, styles }) {
+  return (
+    <View style={size === 'sub' ? styles.subTabRow : styles.mainTabRow}>
+      {tabs.map((t) => {
+        const active = activeKey === t.key;
+        return (
+          <TouchableOpacity
+            key={t.key}
+            style={[size === 'sub' ? styles.subTabButton : styles.mainTabButton, active && (size === 'sub' ? styles.subTabButtonActive : styles.mainTabButtonActive)]}
+            onPress={() => onChange(t.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            accessibilityLabel={t.label}
+          >
+            {t.icon && <Ionicons name={t.icon} size={15} color={active ? colors.background : colors.textMuted} />}
+            <Text style={[size === 'sub' ? styles.subTabText : styles.mainTabText, active && (size === 'sub' ? styles.subTabTextActive : styles.mainTabTextActive)]}>
+              {t.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function TwoCol({ left, right, isDesktop, styles }) {
+  if (isDesktop) {
+    return (
+      <View style={styles.desktopRow}>
+        <View style={styles.desktopCol}>{left}</View>
+        <View style={[styles.desktopCol, styles.desktopResultCol]}>{right}</View>
+      </View>
+    );
+  }
+  return <>{left}{right}</>;
+}
+
 export default function CalculatorScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const { notify } = useAppAlert();
   const { isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
+
+  const [activeTab, setActiveTab] = useState('paciente');
+  const [activeSubTab, setActiveSubTab] = useState('imc');
 
   const [sex, setSex] = useState('F');
   const [weight, setWeight] = useState('');
@@ -178,10 +239,22 @@ export default function CalculatorScreen() {
     }
   };
 
-  const formContent = (
-    <>
+  const goToPaciente = () => setActiveTab('paciente');
+
+  const emptyPrompt = (message) => (
+    <View style={styles.emptyCard}>
+      <Ionicons name="arrow-back-outline" size={22} color={colors.textFaint} />
+      <Text style={styles.empty}>{message}</Text>
+      <TouchableOpacity style={styles.emptyCta} onPress={goToPaciente} accessibilityRole="button" accessibilityLabel="Ir a la pestaña Paciente">
+        <Text style={styles.emptyCtaText}>Ir a Paciente</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const pacienteTab = (
+    <View style={styles.tabContentCentered}>
       <View style={styles.stepCard}>
-        <StepHeader number="1" icon="person-outline" title="Paciente" colors={colors} styles={styles} />
+        <StepHeader number="1" icon="person-outline" title="Datos del paciente" colors={colors} styles={styles} />
 
         <View style={styles.sexRow}>
           {[{ key: 'F', label: 'Mujer', icon: 'female' }, { key: 'M', label: 'Hombre', icon: 'male' }].map((opt) => (
@@ -247,55 +320,21 @@ export default function CalculatorScreen() {
           <Ionicons name="calculator-outline" size={14} color={colors.primary} />
           <Text style={styles.estimatorLinkText}>¿No puedes medir al paciente directo? Estimar peso o talla</Text>
         </TouchableOpacity>
-
-        <Text style={styles.optionalLabel}>Medidas opcionales (para ICC y riesgo de cintura)</Text>
-        <View style={styles.inputRow}>
-          <View style={styles.inputCol}>
-            <Text style={styles.label}>Cintura (cm)</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="decimal-pad"
-              value={waist}
-              onChangeText={setWaist}
-              placeholder="80"
-              placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Circunferencia de cintura en centímetros"
-            />
-          </View>
-          <View style={styles.inputCol}>
-            <Text style={styles.label}>Cadera (cm)</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="decimal-pad"
-              value={hip}
-              onChangeText={setHip}
-              placeholder="95"
-              placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Circunferencia de cadera en centímetros"
-            />
-          </View>
-        </View>
-
-        <Text style={styles.optionalLabel}>CMB (circunferencia muscular del brazo), opcional</Text>
-        <View style={styles.inputRow}>
-          <View style={styles.inputCol}>
-            <Text style={styles.label}>CMB medida (cm)</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="decimal-pad"
-              value={cmb}
-              onChangeText={setCmb}
-              placeholder="Sin dato"
-              placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Circunferencia muscular del brazo en centímetros"
-            />
-          </View>
-        </View>
       </View>
 
-      <View style={styles.stepCard}>
-        <StepHeader number="2" icon="flame-outline" title="Fórmula de TMB" colors={colors} styles={styles} />
+      {hasInputs && (
+        <View style={styles.pacienteReadyCard}>
+          <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+          <Text style={styles.pacienteReadyText}>Listo — revisa Energía y Composición para ver los cálculos.</Text>
+        </View>
+      )}
+    </View>
+  );
 
+  const energiaForm = (
+    <>
+      <View style={styles.stepCard}>
+        <StepHeader number="1" icon="flame-outline" title="Fórmula de TMB" colors={colors} styles={styles} />
         <View style={styles.chipsWrap}>
           {TMB_FORMULAS.map((f) => (
             <TouchableOpacity
@@ -306,32 +345,21 @@ export default function CalculatorScreen() {
               accessibilityState={{ selected: formulaKey === f.key }}
               accessibilityLabel={f.label}
             >
-              <Text style={[styles.chipText, formulaKey === f.key && styles.chipTextActive]}>
-                {f.label}
-              </Text>
+              <Text style={[styles.chipText, formulaKey === f.key && styles.chipTextActive]}>{f.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
-
-        <View style={styles.hintCard}>
-          <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
-          <Text style={styles.hintText}>{formula.hint}</Text>
-        </View>
+        <Hint colors={colors} styles={styles}>{formula.hint}</Hint>
         {!!formula.note && hasInputs && a < 18 && (
           <Text style={styles.formulaWarning}>{formula.note}</Text>
         )}
       </View>
 
       <View style={styles.stepCard}>
-        <StepHeader number="3" icon="walk-outline" title="Nivel de actividad" colors={colors} styles={styles} />
-
-        <View style={styles.hintCard}>
-          <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
-          <Text style={styles.hintText}>
-            Un paciente hospitalizado se mueve mucho menos que alguien libre en la calle, aunque "antes" fuera muy activo — por eso usa una escala de actividad distinta, que no depende del sexo.
-          </Text>
-        </View>
-
+        <StepHeader number="2" icon="walk-outline" title="Nivel de actividad" colors={colors} styles={styles} />
+        <Hint colors={colors} styles={styles}>
+          Un paciente hospitalizado se mueve mucho menos que alguien libre en la calle, aunque "antes" fuera muy activo — por eso usa una escala de actividad distinta, que no depende del sexo.
+        </Hint>
         <View style={styles.sexRow}>
           {[{ key: false, label: 'No hospitalizado' }, { key: true, label: 'Hospitalizado' }].map((opt) => (
             <TouchableOpacity
@@ -346,7 +374,6 @@ export default function CalculatorScreen() {
             </TouchableOpacity>
           ))}
         </View>
-
         <View style={styles.chipsWrap}>
           {activityOptions.map((f) => (
             <TouchableOpacity
@@ -357,24 +384,17 @@ export default function CalculatorScreen() {
               accessibilityState={{ selected: activityKey === f.key }}
               accessibilityLabel={f.label}
             >
-              <Text style={[styles.chipText, activityKey === f.key && styles.chipTextActive]}>
-                {f.label}
-              </Text>
+              <Text style={[styles.chipText, activityKey === f.key && styles.chipTextActive]}>{f.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
       <View style={styles.stepCard}>
-        <StepHeader number="4" icon="pulse-outline" title="Factor de estrés (opcional)" colors={colors} styles={styles} />
-
-        <View style={styles.hintCard}>
-          <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
-          <Text style={styles.hintText}>
-            Enfrentar una enfermedad o lesión sube el gasto de energía del cuerpo por encima de lo normal. El factor de estrés ajusta el GET para reflejar ese gasto extra, según la patología.
-          </Text>
-        </View>
-
+        <StepHeader number="3" icon="pulse-outline" title="Factor de estrés (opcional)" colors={colors} styles={styles} />
+        <Hint colors={colors} styles={styles}>
+          Enfrentar una enfermedad o lesión sube el gasto de energía del cuerpo por encima de lo normal. El factor de estrés ajusta el GET para reflejar ese gasto extra, según la patología.
+        </Hint>
         <View style={styles.chipsWrap}>
           {STRESS_FACTORS.map((s) => (
             <TouchableOpacity
@@ -385,13 +405,10 @@ export default function CalculatorScreen() {
               accessibilityState={{ selected: stressKey === s.key }}
               accessibilityLabel={s.label}
             >
-              <Text style={[styles.chipText, stressKey === s.key && styles.chipTextActive]}>
-                {s.label}
-              </Text>
+              <Text style={[styles.chipText, stressKey === s.key && styles.chipTextActive]}>{s.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
-
         {stressCategory.options.length > 1 && (
           <>
             <Text style={styles.optionalLabel}>Valor</Text>
@@ -405,9 +422,7 @@ export default function CalculatorScreen() {
                   accessibilityState={{ selected: stressValue === opt.value }}
                   accessibilityLabel={opt.label}
                 >
-                  <Text style={[styles.chipText, stressValue === opt.value && styles.chipTextActive]}>
-                    {opt.label}
-                  </Text>
+                  <Text style={[styles.chipText, stressValue === opt.value && styles.chipTextActive]}>{opt.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -417,7 +432,7 @@ export default function CalculatorScreen() {
     </>
   );
 
-  const resultContent = (
+  const energiaResult = (
     <>
       <View style={styles.sectionTitleRow}>
         <Text style={styles.sectionTitle}>Resultado</Text>
@@ -469,78 +484,83 @@ export default function CalculatorScreen() {
               <Text style={styles.kcalKgText}>{kcalPerKg.toFixed(1)} kcal/kg</Text>
             </View>
           )}
-
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-            disabled={saving}
-            accessibilityRole="button"
-            accessibilityLabel="Guardar en historial"
-          >
-            {saving ? <ActivityIndicator color={colors.background} /> : (
-              <>
-                <Ionicons name="bookmark-outline" size={17} color={colors.background} />
-                <Text style={styles.saveButtonText}>Guardar en historial</Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
-      ) : (
-        <View style={styles.emptyCard}>
-          <Ionicons name="calculator-outline" size={28} color={colors.textFaint} />
-          <Text style={styles.empty}>Completa peso, talla y edad para ver el cálculo.</Text>
+      ) : emptyPrompt('Completa peso, talla y edad en Paciente para ver el cálculo.')}
+    </>
+  );
+
+  const imcSub = imc !== null ? (
+    <View style={styles.anthroCard}>
+      <Hint colors={colors} styles={styles}>
+        El IMC clasifica el estado nutricional según peso y talla, pero no distingue masa grasa de masa muscular — por eso se complementa con el peso ideal/ajustado para decidir cuánto debería pesar el paciente.
+      </Hint>
+
+      <View style={styles.imcRow}>
+        <View>
+          <Text style={styles.imcValue}>{imc.toFixed(1)}</Text>
+          <Text style={styles.imcUnit}>kg/m²</Text>
+        </View>
+        <View style={[styles.imcBadge, styles[`imcBadge_${imcCategory.key}`]]}>
+          <Text style={[styles.imcBadgeText, styles[`imcBadgeText_${imcCategory.key}`]]}>{imcCategory.label}</Text>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.anthroRow}>
+        <Text style={styles.anthroLabel}>Peso ideal (por IMC)</Text>
+        <Text style={styles.anthroValue}>{idealWeightByImc !== null ? `${idealWeightByImc.toFixed(1)} kg` : '—'}</Text>
+      </View>
+      <View style={styles.anthroRow}>
+        <Text style={styles.anthroLabel}>Peso ideal (antropométrico)</Text>
+        <Text style={styles.anthroValue}>{idealWeightAnthro !== null ? `${idealWeightAnthro.toFixed(1)} kg` : 'Solo desde 150 cm'}</Text>
+      </View>
+      {showsAdjustedWeight && (
+        <View style={styles.anthroRow}>
+          <Text style={styles.anthroLabel}>Peso ajustado</Text>
+          <Text style={styles.anthroValue}>{adjustedWeight !== null ? `${adjustedWeight.toFixed(1)} kg` : '—'}</Text>
         </View>
       )}
+    </View>
+  ) : emptyPrompt('Completa peso y talla en Paciente para ver el IMC.');
 
-      {imc !== null && (
-        <View style={styles.anthroCard}>
-          <Text style={styles.sectionTitle}>IMC y peso ideal</Text>
-          <View style={styles.hintCard}>
-            <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
-            <Text style={styles.hintText}>
-              El IMC clasifica el estado nutricional según peso y talla, pero no distingue masa grasa de masa muscular — por eso se complementa con el peso ideal/ajustado para decidir cuánto debería pesar el paciente.
-            </Text>
-          </View>
+  const riesgoSub = (
+    <View style={styles.anthroCard}>
+      <Hint colors={colors} styles={styles}>
+        Dos pacientes con el mismo peso pueden tener riesgos distintos según dónde acumulan grasa: más en el abdomen (androide) se asocia a más riesgo cardiometabólico que más en caderas (ginecoide), aunque el IMC sea normal.
+      </Hint>
 
-          <View style={styles.imcRow}>
-            <View>
-              <Text style={styles.imcValue}>{imc.toFixed(1)}</Text>
-              <Text style={styles.imcUnit}>kg/m²</Text>
-            </View>
-            <View style={[styles.imcBadge, styles[`imcBadge_${imcCategory.key}`]]}>
-              <Text style={[styles.imcBadgeText, styles[`imcBadgeText_${imcCategory.key}`]]}>{imcCategory.label}</Text>
-            </View>
-          </View>
+      <Text style={styles.optionalLabel}>Medidas</Text>
+      <View style={styles.inputRow}>
+        <View style={styles.inputCol}>
+          <Text style={styles.label}>Cintura (cm)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="decimal-pad"
+            value={waist}
+            onChangeText={setWaist}
+            placeholder="80"
+            placeholderTextColor={colors.placeholder}
+            accessibilityLabel="Circunferencia de cintura en centímetros"
+          />
+        </View>
+        <View style={styles.inputCol}>
+          <Text style={styles.label}>Cadera (cm)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="decimal-pad"
+            value={hip}
+            onChangeText={setHip}
+            placeholder="95"
+            placeholderTextColor={colors.placeholder}
+            accessibilityLabel="Circunferencia de cadera en centímetros"
+          />
+        </View>
+      </View>
 
+      {waistRisk !== null ? (
+        <>
           <View style={styles.divider} />
-
-          <View style={styles.anthroRow}>
-            <Text style={styles.anthroLabel}>Peso ideal (por IMC)</Text>
-            <Text style={styles.anthroValue}>{idealWeightByImc !== null ? `${idealWeightByImc.toFixed(1)} kg` : '—'}</Text>
-          </View>
-          <View style={styles.anthroRow}>
-            <Text style={styles.anthroLabel}>Peso ideal (antropométrico)</Text>
-            <Text style={styles.anthroValue}>{idealWeightAnthro !== null ? `${idealWeightAnthro.toFixed(1)} kg` : 'Solo desde 150 cm'}</Text>
-          </View>
-          {showsAdjustedWeight && (
-            <View style={styles.anthroRow}>
-              <Text style={styles.anthroLabel}>Peso ajustado</Text>
-              <Text style={styles.anthroValue}>{adjustedWeight !== null ? `${adjustedWeight.toFixed(1)} kg` : '—'}</Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {waistRisk !== null && (
-        <View style={styles.anthroCard}>
-          <Text style={styles.sectionTitle}>Riesgo cardiometabólico</Text>
-          <View style={styles.hintCard}>
-            <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
-            <Text style={styles.hintText}>
-              Dos pacientes con el mismo peso pueden tener riesgos distintos según dónde acumulan grasa: más en el abdomen (androide) se asocia a más riesgo cardiometabólico que más en caderas (ginecoide), aunque el IMC sea normal.
-            </Text>
-          </View>
-
           {icc !== null && (
             <>
               <View style={styles.imcRow}>
@@ -555,27 +575,46 @@ export default function CalculatorScreen() {
               <View style={styles.divider} />
             </>
           )}
-
           <View style={styles.anthroRow}>
             <Text style={styles.anthroLabel}>Circunferencia de cintura</Text>
             <View style={[styles.imcBadge, styles[`riskBadge_${waistRisk.key}`]]}>
               <Text style={[styles.imcBadgeText, styles[`riskBadgeText_${waistRisk.key}`]]}>{waistRisk.label}</Text>
             </View>
           </View>
-        </View>
+        </>
+      ) : (
+        <Text style={styles.anthroHintText}>Ingresa al menos la cintura para ver el riesgo.</Text>
       )}
+    </View>
+  );
+
+  const cmbSub = (
+    <View style={styles.anthroCard}>
+      <Hint colors={colors} styles={styles}>
+        La CMB estima la reserva de masa muscular (proteína somática) del paciente. Sirve para detectar desnutrición que el peso o el IMC solos no muestran, sobre todo en pacientes que retienen líquidos.
+      </Hint>
+
+      <Text style={styles.optionalLabel}>Medida</Text>
+      <View style={styles.inputRow}>
+        <View style={styles.inputCol}>
+          <Text style={styles.label}>CMB medida (cm)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="decimal-pad"
+            value={cmb}
+            onChangeText={setCmb}
+            placeholder="Sin dato"
+            placeholderTextColor={colors.placeholder}
+            accessibilityLabel="Circunferencia muscular del brazo en centímetros"
+          />
+        </View>
+      </View>
 
       {cmbCm > 0 && (
-        <View style={styles.anthroCard}>
-          <Text style={styles.sectionTitle}>% CMB</Text>
-          <View style={styles.hintCard}>
-            <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
-            <Text style={styles.hintText}>
-              La CMB estima la reserva de masa muscular (proteína somática) del paciente. Sirve para detectar desnutrición que el peso o el IMC solos no muestran, sobre todo en pacientes que retienen líquidos.
-            </Text>
-          </View>
+        <>
+          <View style={styles.divider} />
           {cmbIdeal === null ? (
-            <Text style={styles.anthroLabel}>No hay valor de referencia de CMB para esta edad.</Text>
+            <Text style={styles.anthroHintText}>No hay valor de referencia de CMB para esta edad.</Text>
           ) : (
             <>
               {cmbAdjustmentCm !== 0 && (
@@ -594,9 +633,9 @@ export default function CalculatorScreen() {
               </View>
             </>
           )}
-        </View>
+        </>
       )}
-    </>
+    </View>
   );
 
   const estimator = (
@@ -610,33 +649,104 @@ export default function CalculatorScreen() {
     />
   );
 
-  if (isDesktop) {
-    return (
-      <ScrollView contentContainerStyle={styles.desktopContainer}>
-        <View style={styles.desktopRow}>
-          <View style={styles.desktopCol}>{formContent}</View>
-          <View style={[styles.desktopCol, styles.desktopResultCol]}>{resultContent}</View>
-        </View>
-        {estimator}
-      </ScrollView>
-    );
-  }
+  const footerLabel = get !== null
+    ? `GET ${Math.round(get)} kcal/día`
+    : hasInputs ? 'Completa la fórmula para calcular' : 'Completa peso, talla y edad';
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {formContent}
-      {resultContent}
+    <View style={styles.screen}>
+      <TabBar tabs={MAIN_TABS} activeKey={activeTab} onChange={setActiveTab} size="main" colors={colors} styles={styles} />
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {activeTab === 'paciente' && pacienteTab}
+
+        {activeTab === 'energia' && (
+          <View style={styles.tabContentWide}>
+            <TwoCol left={energiaForm} right={energiaResult} isDesktop={isDesktop} styles={styles} />
+          </View>
+        )}
+
+        {activeTab === 'composicion' && (
+          <View style={styles.tabContentCentered}>
+            <TabBar tabs={SUB_TABS} activeKey={activeSubTab} onChange={setActiveSubTab} size="sub" colors={colors} styles={styles} />
+            {activeSubTab === 'imc' && imcSub}
+            {activeSubTab === 'riesgo' && riesgoSub}
+            {activeSubTab === 'cmb' && cmbSub}
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <View style={styles.footerSummary}>
+          <Ionicons name={sex === 'M' ? 'male' : 'female'} size={15} color={colors.primary} />
+          <Text style={styles.footerText} numberOfLines={1}>{footerLabel}</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.saveButton, (!hasInputs || tmb === null || get === null || saving) && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={!hasInputs || tmb === null || get === null || saving}
+          accessibilityRole="button"
+          accessibilityLabel="Guardar en historial"
+        >
+          {saving ? <ActivityIndicator color={colors.background} /> : (
+            <>
+              <Ionicons name="bookmark-outline" size={16} color={colors.background} />
+              <Text style={styles.saveButtonText}>Guardar</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+
       {estimator}
-    </ScrollView>
+    </View>
   );
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.background, flexGrow: 1, gap: 14 },
-  desktopContainer: { padding: 4, backgroundColor: colors.background, flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { padding: 20, flexGrow: 1, gap: 14 },
+
+  tabContentCentered: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 14 },
+  tabContentWide: { width: '100%' },
+
   desktopRow: { flexDirection: 'row', gap: 32, alignItems: 'flex-start' },
   desktopCol: { flex: 1, gap: 14 },
   desktopResultCol: { position: 'sticky', top: 20 },
+
+  mainTabRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  mainTabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: colors.surfaceMuted,
+  },
+  mainTabButtonActive: { backgroundColor: colors.primary },
+  mainTabText: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
+  mainTabTextActive: { color: colors.background },
+
+  subTabRow: { flexDirection: 'row', gap: 6, marginBottom: 2 },
+  subTabButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  subTabButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  subTabText: { fontSize: 12.5, fontWeight: '700', color: colors.textMuted },
+  subTabTextActive: { color: colors.background },
 
   stepCard: {
     backgroundColor: colors.surface,
@@ -709,7 +819,7 @@ const getStyles = (colors) => StyleSheet.create({
   inputRow: { flexDirection: 'row', gap: 10 },
   inputCol: { flex: 1 },
   label: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 6 },
-  optionalLabel: { fontSize: 11.5, color: colors.textFaint, fontWeight: '600', marginTop: 14, marginBottom: 8 },
+  optionalLabel: { fontSize: 11.5, color: colors.textFaint, fontWeight: '600', marginBottom: 8 },
   estimatorLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
   estimatorLinkText: { fontSize: 12, color: colors.primary, fontWeight: '600', flexShrink: 1 },
   input: {
@@ -722,6 +832,16 @@ const getStyles = (colors) => StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.surfaceMuted,
   },
+
+  pacienteReadyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.successSoft,
+    borderRadius: 14,
+    padding: 14,
+  },
+  pacienteReadyText: { flex: 1, fontSize: 12.5, color: colors.success, fontWeight: '600' },
 
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -742,7 +862,7 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.primarySoft,
     borderRadius: 14,
     padding: 12,
-    marginTop: 12,
+    marginBottom: 14,
   },
   hintIcon: { marginTop: 1 },
   hintText: { flex: 1, fontSize: 12.5, color: colors.primary, lineHeight: 17 },
@@ -814,17 +934,7 @@ const getStyles = (colors) => StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 18 },
   kcalKgRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, marginLeft: 48 },
   kcalKgText: { fontSize: 12.5, color: colors.textMuted, fontWeight: '600' },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    minHeight: 50,
-    marginTop: 20,
-  },
-  saveButtonText: { color: colors.background, fontSize: 15, fontWeight: '700' },
+
   emptyCard: {
     alignItems: 'center',
     gap: 10,
@@ -833,18 +943,20 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
   },
   empty: { textAlign: 'center', color: colors.textMuted, fontSize: 13, paddingHorizontal: 24 },
+  emptyCta: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 10, backgroundColor: colors.primary, marginTop: 4 },
+  emptyCtaText: { color: colors.background, fontSize: 12.5, fontWeight: '700' },
 
   anthroCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 20,
-    marginTop: 14,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 1,
   },
+  anthroHintText: { fontSize: 12.5, color: colors.textFaint, textAlign: 'center', paddingVertical: 4 },
   imcRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   imcValue: { fontSize: 30, fontFamily: FONT_DISPLAY_BOLD, color: colors.text },
   imcUnit: { fontSize: 11, color: colors.textFaint, fontWeight: '600' },
@@ -889,4 +1001,29 @@ const getStyles = (colors) => StyleSheet.create({
   anthroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
   anthroLabel: { fontSize: 13, color: colors.textMuted, flex: 1, marginRight: 10 },
   anthroValue: { fontSize: 14, fontFamily: FONT_DISPLAY_BOLD, color: colors.text },
+
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  footerSummary: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  footerText: { fontSize: 13, fontWeight: '700', color: colors.text, flexShrink: 1 },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    minHeight: 46,
+    paddingHorizontal: 20,
+  },
+  saveButtonDisabled: { opacity: 0.45 },
+  saveButtonText: { color: colors.background, fontSize: 14.5, fontWeight: '700' },
 });
