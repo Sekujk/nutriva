@@ -12,6 +12,8 @@ import { computeIMC, classifyIMC, computeIdealWeightByIMC, computeIdealWeightAnt
 import { getActivityOptions, STRESS_FACTORS, getStressCategory } from '../data/getFactors';
 import { getIdealCMB, getCMBAdjustment, computeAdjustedCMB, computePercentCMB, classifyCMBPercent } from '../data/cmb';
 import EstimationTools from '../components/EstimationTools';
+import Hoverable from '../components/Hoverable';
+import { hapticSelection, hapticSuccess } from '../utils/haptics';
 
 const parseNum = (str) => {
   const n = parseFloat(String(str).replace(',', '.'));
@@ -95,19 +97,23 @@ function TabBar({ tabs, activeKey, onChange, size, colors, styles }) {
       {tabs.map((t) => {
         const active = activeKey === t.key;
         return (
-          <TouchableOpacity
-            key={t.key}
-            style={[size === 'sub' ? styles.subTabButton : styles.mainTabButton, active && (size === 'sub' ? styles.subTabButtonActive : styles.mainTabButtonActive)]}
-            onPress={() => onChange(t.key)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
-            accessibilityLabel={t.label}
-          >
-            {t.icon && <Ionicons name={t.icon} size={15} color={active ? colors.background : colors.textMuted} />}
-            <Text style={[size === 'sub' ? styles.subTabText : styles.mainTabText, active && (size === 'sub' ? styles.subTabTextActive : styles.mainTabTextActive)]}>
-              {t.label}
-            </Text>
-          </TouchableOpacity>
+          <Hoverable key={t.key} scaleTo={1} pressScaleTo={0.95} style={size === 'main' && styles.mainTabWrapper}>
+            {({ pressHandlers }) => (
+              <TouchableOpacity
+                style={[size === 'sub' ? styles.subTabButton : styles.mainTabButton, active && (size === 'sub' ? styles.subTabButtonActive : styles.mainTabButtonActive)]}
+                onPress={() => { hapticSelection(); onChange(t.key); }}
+                {...pressHandlers}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={t.label}
+              >
+                {t.icon && <Ionicons name={t.icon} size={15} color={active ? colors.background : colors.textMuted} />}
+                <Text style={[size === 'sub' ? styles.subTabText : styles.mainTabText, active && (size === 'sub' ? styles.subTabTextActive : styles.mainTabTextActive)]}>
+                  {t.label}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </Hoverable>
         );
       })}
     </View>
@@ -231,6 +237,7 @@ export default function CalculatorScreen() {
         get,
       });
       if (error) throw error;
+      hapticSuccess();
       notify({ title: 'Caso guardado', message: 'Lo vas a encontrar en tu Historial.', variant: 'success' });
     } catch (error) {
       notify({ title: 'No se pudo guardar', message: error.message || 'Intenta de nuevo.', variant: 'error' });
@@ -681,20 +688,25 @@ export default function CalculatorScreen() {
           <Ionicons name={sex === 'M' ? 'male' : 'female'} size={15} color={colors.primary} />
           <Text style={styles.footerText} numberOfLines={1}>{footerLabel}</Text>
         </View>
-        <TouchableOpacity
-          style={[styles.saveButton, (!hasInputs || tmb === null || get === null || saving) && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!hasInputs || tmb === null || get === null || saving}
-          accessibilityRole="button"
-          accessibilityLabel="Guardar en historial"
-        >
-          {saving ? <ActivityIndicator color={colors.background} /> : (
-            <>
-              <Ionicons name="bookmark-outline" size={16} color={colors.background} />
-              <Text style={styles.saveButtonText}>Guardar</Text>
-            </>
+        <Hoverable scaleTo={1.03} pressScaleTo={0.96}>
+          {({ pressHandlers }) => (
+            <TouchableOpacity
+              style={[styles.saveButton, (!hasInputs || tmb === null || get === null || saving) && styles.saveButtonDisabled]}
+              onPress={handleSave}
+              {...pressHandlers}
+              disabled={!hasInputs || tmb === null || get === null || saving}
+              accessibilityRole="button"
+              accessibilityLabel="Guardar en historial"
+            >
+              {saving ? <ActivityIndicator color={colors.background} /> : (
+                <>
+                  <Ionicons name="bookmark-outline" size={16} color={colors.background} />
+                  <Text style={styles.saveButtonText}>Guardar</Text>
+                </>
+              )}
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </Hoverable>
       </View>
 
       {estimator}
@@ -722,6 +734,7 @@ const getStyles = (colors) => StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  mainTabWrapper: { flex: 1 },
   mainTabButton: {
     flex: 1,
     flexDirection: 'row',

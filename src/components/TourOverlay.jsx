@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { useTour } from '../context/TourContext';
 import { FONT_DISPLAY_BOLD } from '../theme/typography';
+import { hapticLight, hapticSelection } from '../utils/haptics';
 
 const SCRIM = 'rgba(8, 10, 14, 0.76)';
 const RECT_PAD = 10;
@@ -119,7 +120,7 @@ export default function TourOverlay() {
         <View style={[styles.callout, calloutPosition]}>
           <TouchableOpacity
             style={styles.closeButton}
-            onPress={skipTour}
+            onPress={() => { hapticLight(); skipTour(); }}
             accessibilityRole="button"
             accessibilityLabel="Saltar guía"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -140,7 +141,7 @@ export default function TourOverlay() {
               {stepIndex > 0 && (
                 <TouchableOpacity
                   style={styles.backButton}
-                  onPress={prevStep}
+                  onPress={() => { hapticSelection(); prevStep(); }}
                   accessibilityRole="button"
                   accessibilityLabel="Paso anterior"
                   hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
@@ -150,7 +151,7 @@ export default function TourOverlay() {
               )}
               <TouchableOpacity
                 style={styles.nextButton}
-                onPress={nextStep}
+                onPress={() => { hapticSelection(); nextStep(); }}
                 accessibilityRole="button"
                 accessibilityLabel={stepIndex === totalSteps - 1 ? 'Terminar guía' : 'Siguiente paso'}
               >

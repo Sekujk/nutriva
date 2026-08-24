@@ -12,6 +12,7 @@ import { CountryProvider } from './src/context/CountryContext';
 import { AppAlertProvider } from './src/context/AppAlertContext';
 import { TourProvider, useTourTarget } from './src/context/TourContext';
 import TourOverlay from './src/components/TourOverlay';
+import { hapticSelection } from './src/utils/haptics';
 import AuthScreen from './src/screens/AuthScreen';
 import OnboardingFlow from './src/screens/onboarding/OnboardingFlow';
 import HomeScreen from './src/screens/HomeScreen';
@@ -76,11 +77,12 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
-              <Hoverable key={tab.id} scaleTo={1}>
-                {({ hovered }) => (
+              <Hoverable key={tab.id} scaleTo={1} pressScaleTo={0.97}>
+                {({ hovered, pressHandlers }) => (
                   <TouchableOpacity
                     style={[styles.sidebarItem, active && styles.sidebarItemActive, !active && hovered && styles.sidebarItemHovered]}
-                    onPress={() => setActiveTab(tab.id)}
+                    onPress={() => { hapticSelection(); setActiveTab(tab.id); }}
+                    {...pressHandlers}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
                     accessibilityLabel={tab.label}
@@ -98,12 +100,13 @@ function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent,
           })}
         </View>
 
-        <Hoverable scaleTo={1}>
-          {({ hovered }) => (
+        <Hoverable scaleTo={1} pressScaleTo={0.97}>
+          {({ hovered, pressHandlers }) => (
             <TouchableOpacity
               ref={profileRef}
               style={[styles.sidebarProfile, activeTab === 'profile' && styles.sidebarItemActive, activeTab !== 'profile' && hovered && styles.sidebarItemHovered]}
-              onPress={() => setActiveTab('profile')}
+              onPress={() => { hapticSelection(); setActiveTab('profile'); }}
+              {...pressHandlers}
               accessibilityRole="button"
               accessibilityLabel="Perfil"
             >
@@ -177,23 +180,26 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
           <Text style={styles.heroTitle}>{activeTabInfo.label}</Text>
         </Animated.View>
 
-        <Hoverable scaleTo={1.08}>
-          <TouchableOpacity
-            ref={profileRef}
-            style={[styles.profileCircle, onProfile && styles.profileCircleActive]}
-            onPress={() => setActiveTab('profile')}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Perfil"
-          >
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.profileImage} />
-            ) : (
-              <Text style={[styles.profileInitial, onProfile && styles.profileInitialActive]}>
-                {(username[0] || email[0] || '?').toUpperCase()}
-              </Text>
-            )}
-          </TouchableOpacity>
+        <Hoverable scaleTo={1.08} pressScaleTo={0.92}>
+          {({ pressHandlers }) => (
+            <TouchableOpacity
+              ref={profileRef}
+              style={[styles.profileCircle, onProfile && styles.profileCircleActive]}
+              onPress={() => { hapticSelection(); setActiveTab('profile'); }}
+              {...pressHandlers}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Perfil"
+            >
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.profileImage} />
+              ) : (
+                <Text style={[styles.profileInitial, onProfile && styles.profileInitialActive]}>
+                  {(username[0] || email[0] || '?').toUpperCase()}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
         </Hoverable>
       </View>
 
@@ -207,11 +213,12 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (
-            <Hoverable key={tab.id} scaleTo={1.06} style={styles.tabButtonWrapper}>
-              {({ hovered }) => (
+            <Hoverable key={tab.id} scaleTo={1.06} pressScaleTo={0.93} style={styles.tabButtonWrapper}>
+              {({ hovered, pressHandlers }) => (
                 <TouchableOpacity
                   style={[styles.tabButton, active && styles.tabButtonActive, !active && hovered && styles.tabButtonHovered]}
-                  onPress={() => setActiveTab(tab.id)}
+                  onPress={() => { hapticSelection(); setActiveTab(tab.id); }}
+                  {...pressHandlers}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: active }}
                   accessibilityLabel={tab.label}
