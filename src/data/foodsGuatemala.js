@@ -1,6 +1,14 @@
-// Fuente: INCAP/OPS — "Tabla de Composición de Alimentos de Centroamérica", 2da edición
-// (2007, reimpresión 2012). Valores por 100 g de porción comestible.
-// Subconjunto inicial curado a mano; el documento completo tiene más de 800 alimentos.
+// Fuente: INCAP (Instituto de Nutrición de Centro América y Panamá) — "Tabla de
+// Composición de Alimentos de Centroamérica", 2da edición (2007, reimpresión 2012).
+// Valores por 100 g de porción comestible. Subconjunto curado a mano.
+//
+// Nota sobre vigencia: INCAP publicó una 3ra edición en 2018 (25 grupos, 2657
+// alimentos), que es la más actual. A diferencia de la tabla peruana, esa edición no
+// tiene una versión digital gratuita públicamente disponible (se vende impresa a
+// través de INCAP) y no pudo verificarse valor por valor contra el documento oficial,
+// así que estos datos siguen basados en la 2da edición, que sí es de acceso libre.
+// Si consigues el PDF de la 3ra edición, se puede actualizar esta tabla contra esa
+// fuente.
 
 const foodsGuatemala = [
   // Cereales, panes y tortillas

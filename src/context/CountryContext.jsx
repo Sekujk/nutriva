@@ -5,8 +5,22 @@ import { useProfile } from './ProfileContext';
 const STORAGE_KEY = 'nutriva:country';
 
 export const COUNTRIES = [
-  { code: 'PE', name: 'Perú', tableSource: 'INS' },
-  { code: 'GT', name: 'Guatemala', tableSource: 'INCAP' },
+  {
+    code: 'PE',
+    name: 'Perú',
+    tableSource: 'INS',
+    tableCitation: 'Instituto Nacional de Salud (INS), Centro Nacional de Alimentación, Nutrición y Vida Saludable. Tablas Peruanas de Composición de Alimentos, 11ª edición digital (2025).',
+    tableYear: 2023,
+    tableUrl: 'https://repositorio.ins.gob.pe/bitstreams/6cc030c5-daf4-4f19-9357-6910343796d9/download',
+  },
+  {
+    code: 'GT',
+    name: 'Guatemala',
+    tableSource: 'INCAP',
+    tableCitation: 'Instituto de Nutrición de Centro América y Panamá (INCAP). Tabla de Composición de Alimentos de Centroamérica, 2ª edición (reimpresión 2012).',
+    tableYear: 2012,
+    tableUrl: 'https://www.incap.int',
+  },
 ];
 
 const CountryContext = createContext();
