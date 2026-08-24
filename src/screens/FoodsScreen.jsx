@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/ThemeContext';
@@ -173,9 +173,17 @@ export default function FoodsScreen() {
         </ScrollView>
       </View>
 
-      <Text style={styles.sourceHint}>
-        Fuente: tabla oficial {countryInfo.tableSource} ({countryInfo.name})
-      </Text>
+      <TouchableOpacity
+        style={styles.sourceHintRow}
+        onPress={() => Linking.openURL(countryInfo.tableUrl)}
+        accessibilityRole="link"
+        accessibilityLabel={`Ver fuente oficial: ${countryInfo.tableCitation}`}
+      >
+        <Ionicons name="document-text-outline" size={12} color={colors.textFaint} />
+        <Text style={styles.sourceHint} numberOfLines={2}>
+          {countryInfo.tableCitation}
+        </Text>
+      </TouchableOpacity>
 
       <ScrollView contentContainerStyle={[styles.list, isDesktop && styles.listGrid]}>
         {filtered.length === 0 ? (
@@ -247,7 +255,14 @@ const getStyles = (colors) => StyleSheet.create({
   chipText: { fontSize: 12.5, color: colors.primary, fontWeight: '600' },
   chipTextActive: { color: colors.background },
 
-  sourceHint: { fontSize: 11, color: colors.textFaint, marginTop: 10, marginHorizontal: 20 },
+  sourceHintRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 5,
+    marginTop: 10,
+    marginHorizontal: 20,
+  },
+  sourceHint: { flex: 1, fontSize: 11, color: colors.textFaint, textDecorationLine: 'underline', lineHeight: 15 },
 
   list: { padding: 20, paddingTop: 12, gap: 10 },
   listGrid: { flexDirection: 'row', flexWrap: 'wrap' },
