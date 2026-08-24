@@ -325,6 +325,13 @@ export default function CalculatorScreen() {
       <View style={styles.stepCard}>
         <StepHeader number="3" icon="walk-outline" title="Nivel de actividad" colors={colors} styles={styles} />
 
+        <View style={styles.hintCard}>
+          <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
+          <Text style={styles.hintText}>
+            Un paciente hospitalizado se mueve mucho menos que alguien libre en la calle, aunque "antes" fuera muy activo — por eso usa una escala de actividad distinta, que no depende del sexo.
+          </Text>
+        </View>
+
         <View style={styles.sexRow}>
           {[{ key: false, label: 'No hospitalizado' }, { key: true, label: 'Hospitalizado' }].map((opt) => (
             <TouchableOpacity
@@ -360,6 +367,13 @@ export default function CalculatorScreen() {
 
       <View style={styles.stepCard}>
         <StepHeader number="4" icon="pulse-outline" title="Factor de estrés (opcional)" colors={colors} styles={styles} />
+
+        <View style={styles.hintCard}>
+          <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
+          <Text style={styles.hintText}>
+            Enfrentar una enfermedad o lesión sube el gasto de energía del cuerpo por encima de lo normal. El factor de estrés ajusta el GET para reflejar ese gasto extra, según la patología.
+          </Text>
+        </View>
 
         <View style={styles.chipsWrap}>
           {STRESS_FACTORS.map((s) => (
@@ -481,6 +495,12 @@ export default function CalculatorScreen() {
       {imc !== null && (
         <View style={styles.anthroCard}>
           <Text style={styles.sectionTitle}>IMC y peso ideal</Text>
+          <View style={styles.hintCard}>
+            <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
+            <Text style={styles.hintText}>
+              El IMC clasifica el estado nutricional según peso y talla, pero no distingue masa grasa de masa muscular — por eso se complementa con el peso ideal/ajustado para decidir cuánto debería pesar el paciente.
+            </Text>
+          </View>
 
           <View style={styles.imcRow}>
             <View>
@@ -514,6 +534,12 @@ export default function CalculatorScreen() {
       {waistRisk !== null && (
         <View style={styles.anthroCard}>
           <Text style={styles.sectionTitle}>Riesgo cardiometabólico</Text>
+          <View style={styles.hintCard}>
+            <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
+            <Text style={styles.hintText}>
+              Dos pacientes con el mismo peso pueden tener riesgos distintos según dónde acumulan grasa: más en el abdomen (androide) se asocia a más riesgo cardiometabólico que más en caderas (ginecoide), aunque el IMC sea normal.
+            </Text>
+          </View>
 
           {icc !== null && (
             <>
@@ -542,6 +568,12 @@ export default function CalculatorScreen() {
       {cmbCm > 0 && (
         <View style={styles.anthroCard}>
           <Text style={styles.sectionTitle}>% CMB</Text>
+          <View style={styles.hintCard}>
+            <Ionicons name="bulb-outline" size={14} color={colors.primary} style={styles.hintIcon} />
+            <Text style={styles.hintText}>
+              La CMB estima la reserva de masa muscular (proteína somática) del paciente. Sirve para detectar desnutrición que el peso o el IMC solos no muestran, sobre todo en pacientes que retienen líquidos.
+            </Text>
+          </View>
           {cmbIdeal === null ? (
             <Text style={styles.anthroLabel}>No hay valor de referencia de CMB para esta edad.</Text>
           ) : (
