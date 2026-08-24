@@ -275,12 +275,12 @@ function MainApp() {
 
 function Root() {
   const { session, isLoading } = useAuth();
-  const { profile } = useProfile();
+  const { profile, profileLoaded } = useProfile();
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const fontsLoaded = useAppFonts();
 
-  if (isLoading || !fontsLoaded) {
+  if (isLoading || !profileLoaded || !fontsLoaded) {
     return <AppLoader colors={colors} styles={styles} />;
   }
 
