@@ -172,11 +172,8 @@ function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, 
   return (
     <SafeAreaView style={styles.flex}>
       <View style={styles.hero}>
-        <View style={[styles.blobLarge, { backgroundColor: colors.primarySoft, opacity: 0.5 }]} />
-        <View style={[styles.blobSmall, { backgroundColor: colors.background, opacity: 0.1 }]} />
-
         <Animated.View style={[styles.heroLeft, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <HeroBadge icon={activeTabInfo.icon} size={44} iconSize={22} />
+          <HeroBadge icon={activeTabInfo.icon} size={32} iconSize={16} />
           <Text style={styles.heroTitle}>{activeTabInfo.label}</Text>
         </Animated.View>
 
@@ -355,58 +352,34 @@ const getStyles = (colors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.primary,
-    paddingTop: 10,
-    paddingBottom: 30,
-    paddingHorizontal: 24,
-    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  blobLarge: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    top: -80,
-    right: -50,
-  },
-  blobSmall: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    bottom: -60,
-    left: -30,
-  },
-  heroTitle: { fontSize: 25, fontFamily: FONT_DISPLAY, color: colors.background, letterSpacing: -0.2 },
+  heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  heroTitle: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: -0.2 },
 
   profileCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.background,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.55)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
-  profileCircleActive: { backgroundColor: '#000000', borderColor: colors.background },
-  profileInitial: { fontSize: 17, fontWeight: '800', color: colors.primary },
+  profileCircleActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  profileInitial: { fontSize: 13, fontWeight: '800', color: colors.textMuted },
   profileInitialActive: { color: colors.primary },
-  profileImage: { width: 39, height: 39, borderRadius: 19.5 },
+  profileImage: { width: 31, height: 31, borderRadius: 15.5 },
 
   card: {
     flex: 1,
     backgroundColor: colors.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    marginTop: -20,
-    overflow: 'hidden',
   },
   cardContent: { flex: 1 },
 
