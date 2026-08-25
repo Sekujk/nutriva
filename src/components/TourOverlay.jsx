@@ -33,21 +33,26 @@ export default function TourOverlay() {
     }
 
     let cancelled = false;
+    let measured = false;
     const measure = () => {
       const ref = getTargetRef(step.target);
       if (!ref?.current?.measureInWindow) return;
       ref.current.measureInWindow((x, y, width, height) => {
         if (cancelled) return;
-        if (width > 0 && height > 0) setRect({ x, y, width, height });
+        if (width > 0 && height > 0) {
+          measured = true;
+          setRect({ x, y, width, height });
+        }
       });
     };
 
     measure();
     const retry = setTimeout(measure, MEASURE_RETRY_MS);
     // Si el target nunca aparece (p. ej. cambió de layout inesperadamente),
-    // no dejamos el tour trabado: se salta el paso.
+    // no dejamos el tour trabado: se salta el paso. Pero si ya se midió
+    // bien, este timer NO debe avanzar el paso por su cuenta.
     const bail = setTimeout(() => {
-      if (!cancelled) nextStep();
+      if (!cancelled && !measured) nextStep();
     }, MEASURE_BAIL_MS);
 
     return () => {
