@@ -39,7 +39,7 @@ function StepHeader({ number, icon, title, colors, styles }) {
         <Text style={styles.stepBadgeText}>{number}</Text>
       </View>
       <Text style={styles.stepTitle}>{title}</Text>
-      <Ionicons name={icon} size={17} color={colors.textFaint} style={styles.stepIcon} />
+      <Ionicons name={icon} size={17} color={colors.textMuted} style={styles.stepIcon} />
     </View>
   );
 }
@@ -782,7 +782,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   stepBadgeText: { fontSize: 12, fontWeight: '800', color: colors.background },
   stepTitle: { flex: 1, fontSize: 15, fontFamily: FONT_DISPLAY, color: colors.text },
-  stepIcon: { opacity: 0.7 },
+  stepIcon: { opacity: 0.9 },
 
   sectionTitle: {
     fontSize: 13,

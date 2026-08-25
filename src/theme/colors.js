@@ -19,10 +19,10 @@ const neutralLight = {
 
 const neutralDark = {
   background: '#121317',
-  surface: '#1a1c21',
-  surfaceMuted: '#232529',
-  border: '#2b2d33',
-  borderStrong: '#3c3f46',
+  surface: '#1e2128',
+  surfaceMuted: '#262a32',
+  border: '#32353d',
+  borderStrong: '#454952',
   text: '#f2f3f5',
   textMuted: '#a8adb5',
   textFaint: '#75797e',
