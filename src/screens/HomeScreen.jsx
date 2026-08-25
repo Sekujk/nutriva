@@ -202,6 +202,16 @@ export default function HomeScreen({ onNavigate }) {
           />
         ))}
       </View>
+
+      <View style={[styles.tipCard, styles.tipCardSpacing]}>
+        <View style={styles.tipIconBadge}>
+          <Ionicons name="bulb-outline" size={18} color={colors.primary} />
+        </View>
+        <View style={styles.tipTextCol}>
+          <Text style={styles.tipLabel}>Consejo del día</Text>
+          <Text style={styles.tipText}>{dailyTip}</Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -220,7 +230,7 @@ const getStyles = (colors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 16,
     minHeight: 76,
     overflow: 'hidden',
@@ -261,6 +271,7 @@ const getStyles = (colors) => StyleSheet.create({
   cardTileFooter: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
   cardTileOpen: { fontSize: 13, fontWeight: '700', color: colors.primary },
 
+  tipCardSpacing: { marginTop: 16 },
   tipCard: {
     flexDirection: 'row',
     alignItems: 'center',
