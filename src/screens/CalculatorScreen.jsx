@@ -367,6 +367,7 @@ export default function CalculatorScreen() {
         <Hint colors={colors} styles={styles}>
           Un paciente hospitalizado se mueve mucho menos que alguien libre en la calle, aunque "antes" fuera muy activo — por eso usa una escala de actividad distinta, que no depende del sexo.
         </Hint>
+        <Text style={styles.optionalLabel}>¿Está hospitalizado?</Text>
         <View style={styles.sexRow}>
           {[{ key: false, label: 'No hospitalizado' }, { key: true, label: 'Hospitalizado' }].map((opt) => (
             <TouchableOpacity
@@ -381,6 +382,7 @@ export default function CalculatorScreen() {
             </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.optionalLabel}>Nivel de actividad</Text>
         <View style={styles.chipsWrap}>
           {activityOptions.map((f) => (
             <TouchableOpacity
