@@ -1,14 +1,27 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useProfile } from '../context/ProfileContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
 import { useTour, useTourTarget } from '../context/TourContext';
+import { supabase } from '../config/supabase';
 import Hoverable from '../components/Hoverable';
+import CalculationBreakdown from '../components/CalculationBreakdown';
 import useResponsive from '../hooks/useResponsive';
 import { lighten } from '../utils/color';
-import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../theme/typography';
+import { FONT_DISPLAY, FONT_DISPLAY_ITALIC, FONT_DISPLAY_BOLD } from '../theme/typography';
+
+const MONTHS_SHORT = [
+  'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+  'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+];
+
+const formatShortDate = (iso) => {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+};
 
 const SHORTCUTS = [
   {
@@ -132,12 +145,63 @@ function ShortcutCard({ shortcut, index, onPress, colors, styles, gridStyle, til
   );
 }
 
+function RecentActivity({ items, loading, onOpen, onSeeAll, colors, styles }) {
+  if (loading || items.length === 0) return null;
+
+  return (
+    <View style={[styles.recentCard, styles.tipCardSpacing]}>
+      <View style={styles.recentHeaderRow}>
+        <Text style={styles.recentTitle}>Actividad reciente</Text>
+        <TouchableOpacity
+          onPress={onSeeAll}
+          accessibilityRole="button"
+          accessibilityLabel="Ver todo el historial"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.recentSeeAll}>Ver todo</Text>
+        </TouchableOpacity>
+      </View>
+
+      {items.map((item, index) => (
+        <Hoverable key={item.id} scaleTo={1.01} pressScaleTo={0.985}>
+          {({ hovered, pressHandlers }) => (
+            <TouchableOpacity
+              style={[styles.recentRow, hovered && styles.recentRowHovered, index === items.length - 1 && styles.recentRowLast]}
+              onPress={() => onOpen(item)}
+              {...pressHandlers}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver caso del ${formatShortDate(item.created_at)}`}
+            >
+              <View style={styles.recentIcon}>
+                <Ionicons name={item.sex === 'M' ? 'male' : 'female'} size={15} color={colors.primary} />
+              </View>
+              <View style={styles.recentTextCol}>
+                <Text style={styles.recentDate}>{formatShortDate(item.created_at)}</Text>
+                <Text style={styles.recentMeta} numberOfLines={1}>{item.weight} kg · {item.height} cm · {item.age} años</Text>
+              </View>
+              <View style={styles.recentGetCol}>
+                <Text style={styles.recentGetValue}>{Math.round(item.get)}</Text>
+                <Text style={styles.recentGetUnit}>kcal GET</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </Hoverable>
+      ))}
+    </View>
+  );
+}
+
 export default function HomeScreen({ onNavigate }) {
   const { profile } = useProfile();
+  const { session } = useAuth();
   const { colors } = useTheme();
   const { isTablet, isDesktop } = useResponsive();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const { notifyHomeReady } = useTour();
+
+  const [recentCalcs, setRecentCalcs] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+  const [openItem, setOpenItem] = useState(null);
 
   const username = profile?.username;
   const hourGreeting = useMemo(() => greetingForHour(new Date().getHours()), []);
@@ -149,6 +213,37 @@ export default function HomeScreen({ onNavigate }) {
     const timer = setTimeout(() => notifyHomeReady(), 700);
     return () => clearTimeout(timer);
   }, [notifyHomeReady]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return undefined;
+    let cancelled = false;
+    supabase
+      .from('calculations')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(3)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error) setRecentCalcs(data || []);
+        setLoadingRecent(false);
+      });
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
+
+  const recentActivity = (
+    <RecentActivity
+      items={recentCalcs}
+      loading={loadingRecent}
+      onOpen={setOpenItem}
+      onSeeAll={() => onNavigate?.('history')}
+      colors={colors}
+      styles={styles}
+    />
+  );
+
+  const breakdownModal = (
+    <CalculationBreakdown visible={!!openItem} calc={openItem} onClose={() => setOpenItem(null)} />
+  );
 
   if (isDesktop) {
     return (
@@ -180,6 +275,9 @@ export default function HomeScreen({ onNavigate }) {
             <Text style={styles.tipText}>{dailyTip}</Text>
           </View>
         </View>
+
+        {recentActivity}
+        {breakdownModal}
       </ScrollView>
     );
   }
@@ -203,6 +301,8 @@ export default function HomeScreen({ onNavigate }) {
         ))}
       </View>
 
+      {recentActivity}
+
       <View style={[styles.tipCard, styles.tipCardSpacing]}>
         <View style={styles.tipIconBadge}>
           <Ionicons name="bulb-outline" size={18} color={colors.primary} />
@@ -212,6 +312,8 @@ export default function HomeScreen({ onNavigate }) {
           <Text style={styles.tipText}>{dailyTip}</Text>
         </View>
       </View>
+
+      {breakdownModal}
     </ScrollView>
   );
 }
@@ -291,4 +393,42 @@ const getStyles = (colors) => StyleSheet.create({
   tipTextCol: { flex: 1 },
   tipLabel: { fontSize: 11.5, fontWeight: '700', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
   tipText: { fontSize: 15, fontFamily: FONT_DISPLAY_ITALIC, color: colors.text, lineHeight: 22 },
+
+  recentCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 18,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  recentHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  recentTitle: { fontSize: 15, fontFamily: FONT_DISPLAY, color: colors.text },
+  recentSeeAll: { fontSize: 12.5, fontWeight: '700', color: colors.primary },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  recentRowLast: { borderBottomWidth: 0, paddingBottom: 0 },
+  recentRowHovered: { opacity: 0.85 },
+  recentIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentTextCol: { flex: 1 },
+  recentDate: { fontSize: 13.5, fontWeight: '700', color: colors.text },
+  recentMeta: { fontSize: 11.5, color: colors.textMuted, marginTop: 1 },
+  recentGetCol: { alignItems: 'flex-end' },
+  recentGetValue: { fontSize: 15, fontFamily: FONT_DISPLAY_BOLD, color: colors.primary },
+  recentGetUnit: { fontSize: 9.5, color: colors.textFaint, marginTop: 1 },
 });
