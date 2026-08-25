@@ -32,6 +32,12 @@ const SUB_TABS = [
   { key: 'cmb', label: '%CMB' },
 ];
 
+const ENERGIA_SUB_TABS = [
+  { key: 'formula', label: 'Fórmula' },
+  { key: 'actividad', label: 'Actividad' },
+  { key: 'estres', label: 'Estrés' },
+];
+
 function StepHeader({ number, icon, title, colors, styles }) {
   return (
     <View style={styles.stepHeader}>
@@ -141,6 +147,7 @@ export default function CalculatorScreen() {
 
   const [activeTab, setActiveTab] = useState('paciente');
   const [activeSubTab, setActiveSubTab] = useState('imc');
+  const [activeEnergiaSubTab, setActiveEnergiaSubTab] = useState('formula');
 
   const [sex, setSex] = useState('F');
   const [weight, setWeight] = useState('');
@@ -338,106 +345,114 @@ export default function CalculatorScreen() {
     </View>
   );
 
+  const formulaSub = (
+    <View style={styles.stepCard}>
+      <View style={styles.chipsWrap}>
+        {TMB_FORMULAS.map((f) => (
+          <TouchableOpacity
+            key={f.key}
+            style={[styles.chip, formulaKey === f.key && styles.chipActive]}
+            onPress={() => setFormulaKey(f.key)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: formulaKey === f.key }}
+            accessibilityLabel={f.label}
+          >
+            <Text style={[styles.chipText, formulaKey === f.key && styles.chipTextActive]}>{f.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Hint colors={colors} styles={styles}>{formula.hint}</Hint>
+      {!!formula.note && hasInputs && a < 18 && (
+        <Text style={styles.formulaWarning}>{formula.note}</Text>
+      )}
+    </View>
+  );
+
+  const actividadSub = (
+    <View style={styles.stepCard}>
+      <Hint colors={colors} styles={styles}>
+        Un paciente hospitalizado se mueve mucho menos que alguien libre en la calle, aunque "antes" fuera muy activo — por eso usa una escala de actividad distinta, que no depende del sexo.
+      </Hint>
+      <Text style={styles.optionalLabel}>¿Está hospitalizado?</Text>
+      <View style={styles.sexRow}>
+        {[{ key: false, label: 'No hospitalizado' }, { key: true, label: 'Hospitalizado' }].map((opt) => (
+          <TouchableOpacity
+            key={String(opt.key)}
+            style={[styles.sexButton, hospitalized === opt.key && styles.sexButtonActive]}
+            onPress={() => handleSetHospitalized(opt.key)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: hospitalized === opt.key }}
+            accessibilityLabel={opt.label}
+          >
+            <Text style={[styles.sexButtonText, hospitalized === opt.key && styles.sexButtonTextActive]}>{opt.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={styles.optionalLabel}>Nivel de actividad</Text>
+      <View style={styles.chipsWrap}>
+        {activityOptions.map((f) => (
+          <TouchableOpacity
+            key={f.key}
+            style={[styles.chip, activityKey === f.key && styles.chipActive]}
+            onPress={() => setActivityKey(f.key)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: activityKey === f.key }}
+            accessibilityLabel={f.label}
+          >
+            <Text style={[styles.chipText, activityKey === f.key && styles.chipTextActive]}>{f.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const estresSub = (
+    <View style={styles.stepCard}>
+      <Hint colors={colors} styles={styles}>
+        Enfrentar una enfermedad o lesión sube el gasto de energía del cuerpo por encima de lo normal. El factor de estrés ajusta el GET para reflejar ese gasto extra, según la patología.
+      </Hint>
+      <View style={styles.chipsWrap}>
+        {STRESS_FACTORS.map((s) => (
+          <TouchableOpacity
+            key={s.key}
+            style={[styles.chip, stressKey === s.key && styles.chipActive]}
+            onPress={() => handleSetStressCategory(s.key)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: stressKey === s.key }}
+            accessibilityLabel={s.label}
+          >
+            <Text style={[styles.chipText, stressKey === s.key && styles.chipTextActive]}>{s.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {stressCategory.options.length > 1 && (
+        <>
+          <Text style={styles.optionalLabel}>Valor</Text>
+          <View style={styles.chipsWrap}>
+            {stressCategory.options.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.chip, stressValue === opt.value && styles.chipActive]}
+                onPress={() => setStressValue(opt.value)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: stressValue === opt.value }}
+                accessibilityLabel={opt.label}
+              >
+                <Text style={[styles.chipText, stressValue === opt.value && styles.chipTextActive]}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+    </View>
+  );
+
   const energiaForm = (
     <>
-      <View style={styles.stepCard}>
-        <StepHeader number="1" icon="flame-outline" title="Fórmula de TMB" colors={colors} styles={styles} />
-        <View style={styles.chipsWrap}>
-          {TMB_FORMULAS.map((f) => (
-            <TouchableOpacity
-              key={f.key}
-              style={[styles.chip, formulaKey === f.key && styles.chipActive]}
-              onPress={() => setFormulaKey(f.key)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: formulaKey === f.key }}
-              accessibilityLabel={f.label}
-            >
-              <Text style={[styles.chipText, formulaKey === f.key && styles.chipTextActive]}>{f.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Hint colors={colors} styles={styles}>{formula.hint}</Hint>
-        {!!formula.note && hasInputs && a < 18 && (
-          <Text style={styles.formulaWarning}>{formula.note}</Text>
-        )}
-      </View>
-
-      <View style={styles.stepCard}>
-        <StepHeader number="2" icon="walk-outline" title="Nivel de actividad" colors={colors} styles={styles} />
-        <Hint colors={colors} styles={styles}>
-          Un paciente hospitalizado se mueve mucho menos que alguien libre en la calle, aunque "antes" fuera muy activo — por eso usa una escala de actividad distinta, que no depende del sexo.
-        </Hint>
-        <Text style={styles.optionalLabel}>¿Está hospitalizado?</Text>
-        <View style={styles.sexRow}>
-          {[{ key: false, label: 'No hospitalizado' }, { key: true, label: 'Hospitalizado' }].map((opt) => (
-            <TouchableOpacity
-              key={String(opt.key)}
-              style={[styles.sexButton, hospitalized === opt.key && styles.sexButtonActive]}
-              onPress={() => handleSetHospitalized(opt.key)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: hospitalized === opt.key }}
-              accessibilityLabel={opt.label}
-            >
-              <Text style={[styles.sexButtonText, hospitalized === opt.key && styles.sexButtonTextActive]}>{opt.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={styles.optionalLabel}>Nivel de actividad</Text>
-        <View style={styles.chipsWrap}>
-          {activityOptions.map((f) => (
-            <TouchableOpacity
-              key={f.key}
-              style={[styles.chip, activityKey === f.key && styles.chipActive]}
-              onPress={() => setActivityKey(f.key)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: activityKey === f.key }}
-              accessibilityLabel={f.label}
-            >
-              <Text style={[styles.chipText, activityKey === f.key && styles.chipTextActive]}>{f.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.stepCard}>
-        <StepHeader number="3" icon="pulse-outline" title="Factor de estrés (opcional)" colors={colors} styles={styles} />
-        <Hint colors={colors} styles={styles}>
-          Enfrentar una enfermedad o lesión sube el gasto de energía del cuerpo por encima de lo normal. El factor de estrés ajusta el GET para reflejar ese gasto extra, según la patología.
-        </Hint>
-        <View style={styles.chipsWrap}>
-          {STRESS_FACTORS.map((s) => (
-            <TouchableOpacity
-              key={s.key}
-              style={[styles.chip, stressKey === s.key && styles.chipActive]}
-              onPress={() => handleSetStressCategory(s.key)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: stressKey === s.key }}
-              accessibilityLabel={s.label}
-            >
-              <Text style={[styles.chipText, stressKey === s.key && styles.chipTextActive]}>{s.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {stressCategory.options.length > 1 && (
-          <>
-            <Text style={styles.optionalLabel}>Valor</Text>
-            <View style={styles.chipsWrap}>
-              {stressCategory.options.map((opt) => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[styles.chip, stressValue === opt.value && styles.chipActive]}
-                  onPress={() => setStressValue(opt.value)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: stressValue === opt.value }}
-                  accessibilityLabel={opt.label}
-                >
-                  <Text style={[styles.chipText, stressValue === opt.value && styles.chipTextActive]}>{opt.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-      </View>
+      <TabBar tabs={ENERGIA_SUB_TABS} activeKey={activeEnergiaSubTab} onChange={setActiveEnergiaSubTab} size="sub" colors={colors} styles={styles} />
+      {activeEnergiaSubTab === 'formula' && formulaSub}
+      {activeEnergiaSubTab === 'actividad' && actividadSub}
+      {activeEnergiaSubTab === 'estres' && estresSub}
     </>
   );
 
