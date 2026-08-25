@@ -12,6 +12,16 @@ import Hoverable from '../components/Hoverable';
 import useResponsive from '../hooks/useResponsive';
 import CalculationBreakdown from '../components/CalculationBreakdown';
 import { hapticLight, hapticWarning } from '../utils/haptics';
+import { computeIMC, classifyIMC } from '../data/anthropometrics';
+
+const IMC_ACCENT_KEY = {
+  bajoPeso: 'warning',
+  normal: 'success',
+  sobrepeso: 'warning',
+  obesidadI: 'danger',
+  obesidadII: 'danger',
+  obesidadIII: 'danger',
+};
 
 const MONTHS_SHORT = [
   'ene', 'feb', 'mar', 'abr', 'may', 'jun',
@@ -42,6 +52,10 @@ const monthGroupLabel = (iso) => {
 function HistoryCard({ item, index, deleting, onDelete, onOpen, colors, styles }) {
   const entrance = useRef(new Animated.Value(0)).current;
 
+  const imc = computeIMC(item.weight, item.height);
+  const imcCategory = classifyIMC(imc);
+  const accentColor = colors[IMC_ACCENT_KEY[imcCategory.key]] || colors.primary;
+
   useEffect(() => {
     Animated.timing(entrance, {
       toValue: 1,
@@ -61,7 +75,7 @@ function HistoryCard({ item, index, deleting, onDelete, onOpen, colors, styles }
       <Hoverable scaleTo={1.008}>
         {({ hovered }) => (
           <TouchableOpacity
-            style={[styles.card, hovered && styles.cardHovered]}
+            style={[styles.card, { borderLeftColor: accentColor }, hovered && styles.cardHovered]}
             onPress={() => onOpen(item)}
             activeOpacity={0.85}
             accessibilityRole="button"
@@ -77,6 +91,9 @@ function HistoryCard({ item, index, deleting, onDelete, onOpen, colors, styles }
                 <Ionicons name={item.sex === 'M' ? 'male' : 'female'} size={16} color={colors.primary} />
               </LinearGradient>
               <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
+              <View style={[styles.imcBadge, { backgroundColor: `${accentColor}22` }]}>
+                <Text style={[styles.imcBadgeText, { color: accentColor }]}>IMC {imc.toFixed(1)}</Text>
+              </View>
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => onDelete(item)}
@@ -173,6 +190,14 @@ export default function HistoryScreen() {
     return [...map.values()];
   }, [items]);
 
+  const stats = useMemo(() => {
+    if (items.length === 0) return null;
+    const thisMonthKey = monthGroupKey(new Date().toISOString());
+    const thisMonthCount = items.filter((i) => monthGroupKey(i.created_at) === thisMonthKey).length;
+    const avgGet = Math.round(items.reduce((sum, i) => sum + i.get, 0) / items.length);
+    return { total: items.length, thisMonthCount, avgGet };
+  }, [items]);
+
   const handleDelete = (item) => {
     hapticWarning();
     confirm({
@@ -227,6 +252,25 @@ export default function HistoryScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
     >
       <View style={isDesktop ? styles.desktopWrap : null}>
+        {stats && (
+          <View style={styles.statsCard}>
+            <View style={styles.statTile}>
+              <Text style={styles.statValue}>{stats.total}</Text>
+              <Text style={styles.statLabel}>Casos totales</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statTile}>
+              <Text style={styles.statValue}>{stats.thisMonthCount}</Text>
+              <Text style={styles.statLabel}>Este mes</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statTile}>
+              <Text style={styles.statValue}>{stats.avgGet}</Text>
+              <Text style={styles.statLabel}>GET promedio</Text>
+            </View>
+          </View>
+        )}
+
         {groups.map((group) => (
           <View key={group.label} style={styles.group}>
             <Text style={styles.monthLabel}>{group.label}</Text>
@@ -274,21 +318,46 @@ const getStyles = (colors) => StyleSheet.create({
   title: { fontSize: 18, fontFamily: FONT_DISPLAY, color: colors.text, textAlign: 'center' },
   body: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
 
+  statsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 18,
+    marginBottom: 22,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  statTile: { flex: 1, alignItems: 'center' },
+  statDivider: { width: 1, height: 34, backgroundColor: colors.border },
+  statValue: { fontSize: 22, fontFamily: FONT_DISPLAY_BOLD, color: colors.primary },
+  statLabel: { fontSize: 10.5, color: colors.textFaint, fontWeight: '600', marginTop: 3, textAlign: 'center' },
+
   group: { marginBottom: 22 },
   monthLabel: {
-    fontSize: 12,
+    alignSelf: 'flex-start',
+    fontSize: 11,
     fontWeight: '700',
     color: colors.textMuted,
+    backgroundColor: colors.surfaceMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
     marginBottom: 12,
     marginLeft: 4,
+    overflow: 'hidden',
   },
   list: { gap: 12 },
 
   card: {
     backgroundColor: colors.surface,
     borderRadius: 18,
+    borderLeftWidth: 4,
     padding: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
@@ -308,6 +377,8 @@ const getStyles = (colors) => StyleSheet.create({
     justifyContent: 'center',
   },
   cardDate: { flex: 1, fontSize: 14.5, fontFamily: FONT_DISPLAY, color: colors.text },
+  imcBadge: { borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4 },
+  imcBadgeText: { fontSize: 10.5, fontWeight: '700' },
   deleteButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   cardMeta: { fontSize: 12.5, color: colors.textMuted, marginTop: 10 },
 
