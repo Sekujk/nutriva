@@ -347,19 +347,23 @@ export default function CalculatorScreen() {
 
   const formulaSub = (
     <View style={styles.stepCard}>
-      <View style={styles.chipsWrap}>
-        {TMB_FORMULAS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.chip, formulaKey === f.key && styles.chipActive]}
-            onPress={() => setFormulaKey(f.key)}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: formulaKey === f.key }}
-            accessibilityLabel={f.label}
-          >
-            <Text style={[styles.chipText, formulaKey === f.key && styles.chipTextActive]}>{f.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.formulaList}>
+        {TMB_FORMULAS.map((f) => {
+          const active = formulaKey === f.key;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.formulaOption, active && styles.formulaOptionActive]}
+              onPress={() => setFormulaKey(f.key)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={f.label}
+            >
+              <Text style={[styles.formulaOptionText, active && styles.formulaOptionTextActive]}>{f.label}</Text>
+              {active && <Ionicons name="checkmark-circle" size={18} color={colors.background} />}
+            </TouchableOpacity>
+          );
+        })}
       </View>
       <Hint colors={colors} styles={styles}>{formula.hint}</Hint>
       {!!formula.note && hasInputs && a < 18 && (
@@ -885,6 +889,20 @@ const getStyles = (colors) => StyleSheet.create({
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   chipTextActive: { color: colors.background },
+
+  formulaList: { gap: 8 },
+  formulaOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 14,
+    backgroundColor: colors.primarySoft,
+  },
+  formulaOptionActive: { backgroundColor: colors.primary },
+  formulaOptionText: { fontSize: 14, fontWeight: '600', color: colors.primary },
+  formulaOptionTextActive: { color: colors.background },
 
   hintCard: {
     flexDirection: 'row',
