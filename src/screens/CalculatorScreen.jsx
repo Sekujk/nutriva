@@ -547,14 +547,14 @@ export default function CalculatorScreen() {
         <Text style={styles.anthroValue}>{idealWeightByImc !== null ? `${idealWeightByImc.toFixed(1)} kg` : '—'}</Text>
       </View>
       <View style={styles.anthroRow}>
-        <Text style={styles.anthroLabel}>Peso ideal (antropométrico)</Text>
+        <Text style={styles.anthroLabel}>Peso ideal (Hamwi)</Text>
         <Text style={styles.anthroValue}>{idealWeightAnthro !== null ? `${idealWeightAnthro.toFixed(1)} kg` : 'Solo desde 150 cm'}</Text>
       </View>
       {idealWeightByImc !== null && idealWeightAnthro !== null && (
         <Text style={styles.idealWeightNote}>
-          No son lo mismo: "por IMC" es el límite superior de lo normal (IMC 24.9), no un punto medio. El
-          antropométrico es la fórmula de referencia antropométrica clásica — si difieren mucho, suele ser el que se
-          cita como peso ideal.
+          No son lo mismo: "por IMC" usa 24.9 (límite superior de lo normal), no un punto medio. "Hamwi" es la
+          fórmula de Hamwi (1964): {sex === 'M' ? '48 + 1.1 kg' : '45 + 0.9 kg'} por cada cm sobre 150 cm — válida
+          solo desde esa talla. Si difieren mucho, en la práctica suele citarse el valor de Hamwi.
         </Text>
       )}
       {showsAdjustedWeight && (

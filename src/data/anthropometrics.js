@@ -25,8 +25,10 @@ export const computeIdealWeightByIMC = (heightCm) => {
   return heightM * heightM * 24.9;
 };
 
-// Peso ideal por formula antropometrica (valida para tallas >= 150 cm,
-// que es para lo que esta pensada la formula).
+// Peso ideal por formula de Hamwi (Hamwi, 1964), version metrica
+// simplificada: base en 150 cm en vez de 152.4 cm (5 pies) y pendientes
+// redondeadas a 1.1/0.9 kg por cm en vez de 1.07/0.89 kg por cm. Valida
+// para tallas >= 150 cm, que es para lo que esta pensada la formula.
 export const computeIdealWeightAnthropometric = (sex, heightCm) => {
   const overBase = heightCm - 150;
   return sex === 'M' ? 48 + 1.1 * overBase : 45 + 0.9 * overBase;

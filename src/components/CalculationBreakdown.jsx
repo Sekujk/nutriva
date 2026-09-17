@@ -219,7 +219,7 @@ export default function CalculationBreakdown({ visible, onClose, calc }) {
                     <Text style={styles.tableValue}>{idealWeightByImc.toFixed(1)} kg</Text>
                   </View>
                   <View style={[styles.tableRow]}>
-                    <Text style={styles.tableLabel}>Peso ideal (antropométrico)</Text>
+                    <Text style={styles.tableLabel}>Peso ideal (Hamwi)</Text>
                     <Text style={styles.tableValue}>{idealWeightAnthro !== null ? `${idealWeightAnthro.toFixed(1)} kg` : 'Solo desde 150 cm'}</Text>
                   </View>
                   {showsAdjustedWeight && (
