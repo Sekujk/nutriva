@@ -11,6 +11,7 @@ import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import Hoverable from '../components/Hoverable';
 import useResponsive from '../hooks/useResponsive';
 import CalculationBreakdown from '../components/CalculationBreakdown';
+import ShareCaseModal from '../components/ShareCaseModal';
 import { hapticLight, hapticWarning } from '../utils/haptics';
 import { computeIMC, classifyIMC } from '../data/anthropometrics';
 
@@ -49,7 +50,7 @@ const monthGroupLabel = (iso) => {
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
-function HistoryCard({ item, index, deleting, onDelete, onOpen, colors, styles }) {
+function HistoryCard({ item, index, deleting, onDelete, onOpen, onShare, colors, styles }) {
   const entrance = useRef(new Animated.Value(0)).current;
 
   const imc = computeIMC(item.weight, item.height);
@@ -72,73 +73,90 @@ function HistoryCard({ item, index, deleting, onDelete, onOpen, colors, styles }
         transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
       }}
     >
-      <Hoverable scaleTo={1.008}>
-        {({ hovered }) => (
+      <View style={styles.cardOuter}>
+        <Hoverable scaleTo={1.008}>
+          {({ hovered }) => (
+            <TouchableOpacity
+              style={[styles.card, { borderLeftColor: accentColor }, hovered && styles.cardHovered]}
+              onPress={() => onOpen(item)}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver cómo se calculó el caso del ${formatDate(item.created_at)}`}
+            >
+              <View style={styles.cardHeader}>
+                <LinearGradient
+                  colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.cardIcon}
+                >
+                  <Ionicons name={item.sex === 'M' ? 'male' : 'female'} size={16} color={colors.primary} />
+                </LinearGradient>
+                <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
+                <View style={[styles.imcBadge, { backgroundColor: `${accentColor}22` }]}>
+                  <Text style={[styles.imcBadgeText, { color: accentColor }]}>IMC {imc.toFixed(1)}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.cardMeta}>
+                {item.weight} kg · {item.height} cm · {item.age} años · {item.activity_label}
+              </Text>
+
+              <View style={styles.formulaPill}>
+                <Text style={styles.formulaPillText}>{item.formula_label || 'Mifflin-St Jeor'}</Text>
+              </View>
+
+              <View style={styles.cardResults}>
+                <View style={styles.cardResultCol}>
+                  <Text style={styles.cardResultLabel}>TMB</Text>
+                  <Text style={styles.cardResultValue}>{Math.round(item.tmb)}</Text>
+                  <Text style={styles.cardResultUnit}>kcal/día</Text>
+                </View>
+                <View style={styles.resultDivider} />
+                <View style={styles.cardResultCol}>
+                  <Text style={styles.cardResultLabel}>GET</Text>
+                  <Text style={styles.cardResultValue}>{Math.round(item.get)}</Text>
+                  <Text style={styles.cardResultUnit}>kcal/día</Text>
+                </View>
+              </View>
+
+              <View style={styles.cardHint}>
+                <Ionicons name="grid-outline" size={12} color={colors.textFaint} />
+                <Text style={styles.cardHintText}>Toca para ver cómo se calculó</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </Hoverable>
+
+        {/* Fuera del TouchableOpacity de la tarjeta a propósito: en RN Web ambos
+            se renderizan como <button>, y un <button> dentro de otro <button>
+            es HTML invalido (el navegador lo reordena solo, rompiendo el layout). */}
+        <View style={styles.cardActions}>
           <TouchableOpacity
-            style={[styles.card, { borderLeftColor: accentColor }, hovered && styles.cardHovered]}
-            onPress={() => onOpen(item)}
-            activeOpacity={0.85}
+            style={styles.shareButton}
+            onPress={() => onShare(item)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel={`Ver cómo se calculó el caso del ${formatDate(item.created_at)}`}
+            accessibilityLabel="Compartir caso"
           >
-            <View style={styles.cardHeader}>
-              <LinearGradient
-                colors={[lighten(colors.primarySoft, 0.18), colors.primarySoft]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.cardIcon}
-              >
-                <Ionicons name={item.sex === 'M' ? 'male' : 'female'} size={16} color={colors.primary} />
-              </LinearGradient>
-              <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
-              <View style={[styles.imcBadge, { backgroundColor: `${accentColor}22` }]}>
-                <Text style={[styles.imcBadgeText, { color: accentColor }]}>IMC {imc.toFixed(1)}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => onDelete(item)}
-                disabled={deleting}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Eliminar caso"
-              >
-                {deleting ? (
-                  <ActivityIndicator size="small" color={colors.danger} />
-                ) : (
-                  <Ionicons name="trash-outline" size={17} color={colors.danger} />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.cardMeta}>
-              {item.weight} kg · {item.height} cm · {item.age} años · {item.activity_label}
-            </Text>
-
-            <View style={styles.formulaPill}>
-              <Text style={styles.formulaPillText}>{item.formula_label || 'Mifflin-St Jeor'}</Text>
-            </View>
-
-            <View style={styles.cardResults}>
-              <View style={styles.cardResultCol}>
-                <Text style={styles.cardResultLabel}>TMB</Text>
-                <Text style={styles.cardResultValue}>{Math.round(item.tmb)}</Text>
-                <Text style={styles.cardResultUnit}>kcal/día</Text>
-              </View>
-              <View style={styles.resultDivider} />
-              <View style={styles.cardResultCol}>
-                <Text style={styles.cardResultLabel}>GET</Text>
-                <Text style={styles.cardResultValue}>{Math.round(item.get)}</Text>
-                <Text style={styles.cardResultUnit}>kcal/día</Text>
-              </View>
-            </View>
-
-            <View style={styles.cardHint}>
-              <Ionicons name="grid-outline" size={12} color={colors.textFaint} />
-              <Text style={styles.cardHintText}>Toca para ver cómo se calculó</Text>
-            </View>
+            <Ionicons name="share-social-outline" size={16} color={colors.primary} />
           </TouchableOpacity>
-        )}
-      </Hoverable>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => onDelete(item)}
+            disabled={deleting}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar caso"
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color={colors.danger} />
+            ) : (
+              <Ionicons name="trash-outline" size={17} color={colors.danger} />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     </Animated.View>
   );
 }
@@ -155,6 +173,7 @@ export default function HistoryScreen() {
   const [items, setItems] = useState([]);
   const [deletingId, setDeletingId] = useState(null);
   const [openItem, setOpenItem] = useState(null);
+  const [sharingItem, setSharingItem] = useState(null);
 
   const loadItems = useCallback(async () => {
     const { data, error } = await supabase
@@ -286,6 +305,7 @@ export default function HistoryScreen() {
                     deleting={deletingId === item.id}
                     onDelete={handleDelete}
                     onOpen={setOpenItem}
+                    onShare={setSharingItem}
                     colors={colors}
                     styles={styles}
                   />
@@ -297,6 +317,7 @@ export default function HistoryScreen() {
       </View>
 
       <CalculationBreakdown visible={!!openItem} calc={openItem} onClose={() => setOpenItem(null)} />
+      <ShareCaseModal visible={!!sharingItem} item={sharingItem} onClose={() => setSharingItem(null)} />
     </ScrollView>
   );
 }
@@ -354,6 +375,14 @@ const getStyles = (colors) => StyleSheet.create({
   },
   list: { gap: 12 },
 
+  cardOuter: { position: 'relative' },
+  cardActions: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 18,
@@ -368,7 +397,7 @@ const getStyles = (colors) => StyleSheet.create({
     borderColor: 'transparent',
   },
   cardHovered: { borderColor: colors.primary, shadowOpacity: 0.12 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 68 },
   cardIcon: {
     width: 32,
     height: 32,
@@ -379,6 +408,7 @@ const getStyles = (colors) => StyleSheet.create({
   cardDate: { flex: 1, fontSize: 14.5, fontFamily: FONT_DISPLAY, color: colors.text },
   imcBadge: { borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4 },
   imcBadgeText: { fontSize: 10.5, fontWeight: '700' },
+  shareButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   deleteButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   cardMeta: { fontSize: 12.5, color: colors.textMuted, marginTop: 10 },
 
