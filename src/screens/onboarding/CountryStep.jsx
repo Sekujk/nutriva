@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../../theme/ThemeContext';
 import OnboardingShell from './OnboardingShell';
 import CountryFlag from '../../components/CountryFlag';
@@ -49,6 +49,7 @@ export default function CountryStep({
               onPress={() => onSelect(c.code)}
               accessibilityRole="radio"
               accessibilityState={{ selected: active }}
+              aria-selected={active}
               accessibilityLabel={c.name}
             >
               <CountryFlag code={c.code} size={30} />

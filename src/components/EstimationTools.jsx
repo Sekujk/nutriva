@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Animated, Pressable, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../theme/ThemeContext';
 import { FONT_DISPLAY, FONT_DISPLAY_BOLD } from '../theme/typography';
 import useResponsive from '../hooks/useResponsive';
@@ -156,6 +156,7 @@ export default function EstimationTools({ visible, onClose, sex, age, onApplyWei
                 onPress={() => setTool(t.key)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: tool === t.key }}
+                aria-selected={tool === t.key}
                 accessibilityLabel={t.label}
               >
                 <Ionicons name={t.icon} size={14} color={tool === t.key ? colors.background : colors.textMuted} />
@@ -214,6 +215,7 @@ export default function EstimationTools({ visible, onClose, sex, age, onApplyWei
                       onPress={() => setLimbKey(l.key)}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: limbKey === l.key }}
+                      aria-selected={limbKey === l.key}
                       accessibilityLabel={`${l.label}, ${l.percent}%`}
                     >
                       <Text style={[styles.chipText, limbKey === l.key && styles.chipTextActive]}>{l.label} ({l.percent}%)</Text>
@@ -228,6 +230,7 @@ export default function EstimationTools({ visible, onClose, sex, age, onApplyWei
                     onPress={() => setLimbDirection('subtract')}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: limbDirection === 'subtract' }}
+                    aria-selected={limbDirection === 'subtract'}
                     accessibilityLabel="Restar (peso sin la extremidad)"
                   >
                     <Text style={[styles.sexButtonText, limbDirection === 'subtract' && styles.sexButtonTextActive]}>Restar</Text>
@@ -237,6 +240,7 @@ export default function EstimationTools({ visible, onClose, sex, age, onApplyWei
                     onPress={() => setLimbDirection('add')}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: limbDirection === 'add' }}
+                    aria-selected={limbDirection === 'add'}
                     accessibilityLabel="Sumar (peso previo a la amputación)"
                   >
                     <Text style={[styles.sexButtonText, limbDirection === 'add' && styles.sexButtonTextActive]}>Sumar</Text>
@@ -258,6 +262,7 @@ export default function EstimationTools({ visible, onClose, sex, age, onApplyWei
                   onPress={() => setChNoLowerLimb((v) => !v)}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: chNoLowerLimb }}
+                  aria-checked={chNoLowerLimb}
                   accessibilityLabel="Paciente sin extremidad inferior"
                 >
                   <View style={[styles.checkbox, chNoLowerLimb && styles.checkboxChecked]}>

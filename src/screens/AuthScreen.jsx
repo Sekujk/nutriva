@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Animated,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -168,6 +168,7 @@ export default function AuthScreen() {
             onPress={() => setAcceptedTerms((prev) => !prev)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: acceptedTerms }}
+            aria-checked={acceptedTerms}
             accessibilityLabel="Acepto los términos y condiciones"
           >
             <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
@@ -186,6 +187,7 @@ export default function AuthScreen() {
             onPress={() => setStudyOptIn((prev) => !prev)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: studyOptIn }}
+            aria-checked={studyOptIn}
             accessibilityLabel="Quiero participar compartiendo datos anónimos para futuros estudios"
           >
             <View style={[styles.checkbox, studyOptIn && styles.checkboxChecked]}>

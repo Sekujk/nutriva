@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppAlert } from '../context/AppAlertContext';
@@ -111,6 +111,7 @@ function TabBar({ tabs, activeKey, onChange, size, colors, styles }) {
                 {...pressHandlers}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
+                aria-selected={active}
                 accessibilityLabel={t.label}
               >
                 {t.icon && <Ionicons name={t.icon} size={15} color={active ? colors.background : colors.textMuted} />}
@@ -278,6 +279,7 @@ export default function CalculatorScreen() {
               onPress={() => handleSetSex(opt.key)}
               accessibilityRole="radio"
               accessibilityState={{ selected: sex === opt.key }}
+              aria-selected={sex === opt.key}
               accessibilityLabel={opt.label}
             >
               <Ionicons name={opt.icon} size={16} color={sex === opt.key ? colors.background : colors.textMuted} />
@@ -357,6 +359,7 @@ export default function CalculatorScreen() {
               onPress={() => setFormulaKey(f.key)}
               accessibilityRole="radio"
               accessibilityState={{ selected: active }}
+              aria-selected={active}
               accessibilityLabel={f.label}
             >
               <Text style={[styles.formulaOptionText, active && styles.formulaOptionTextActive]}>{f.label}</Text>
@@ -386,6 +389,7 @@ export default function CalculatorScreen() {
             onPress={() => handleSetHospitalized(opt.key)}
             accessibilityRole="radio"
             accessibilityState={{ selected: hospitalized === opt.key }}
+            aria-selected={hospitalized === opt.key}
             accessibilityLabel={opt.label}
           >
             <Text style={[styles.sexButtonText, hospitalized === opt.key && styles.sexButtonTextActive]}>{opt.label}</Text>
@@ -401,6 +405,7 @@ export default function CalculatorScreen() {
             onPress={() => setActivityKey(f.key)}
             accessibilityRole="radio"
             accessibilityState={{ selected: activityKey === f.key }}
+            aria-selected={activityKey === f.key}
             accessibilityLabel={f.label}
           >
             <Text style={[styles.chipText, activityKey === f.key && styles.chipTextActive]}>{f.label}</Text>
@@ -423,6 +428,7 @@ export default function CalculatorScreen() {
             onPress={() => handleSetStressCategory(s.key)}
             accessibilityRole="radio"
             accessibilityState={{ selected: stressKey === s.key }}
+            aria-selected={stressKey === s.key}
             accessibilityLabel={s.label}
           >
             <Text style={[styles.chipText, stressKey === s.key && styles.chipTextActive]}>{s.label}</Text>
@@ -440,6 +446,7 @@ export default function CalculatorScreen() {
                 onPress={() => setStressValue(opt.value)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: stressValue === opt.value }}
+                aria-selected={stressValue === opt.value}
                 accessibilityLabel={opt.label}
               >
                 <Text style={[styles.chipText, stressValue === opt.value && styles.chipTextActive]}>{opt.label}</Text>

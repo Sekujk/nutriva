@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, Linking, Platform } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../theme/ThemeContext';
 import { useCountry } from '../context/CountryContext';
@@ -154,6 +154,7 @@ export default function FoodsScreen() {
             onPress={() => setActiveGroup(null)}
             accessibilityRole="radio"
             accessibilityState={{ selected: !activeGroup }}
+            aria-selected={!activeGroup}
             accessibilityLabel="Todos los grupos"
           >
             <Text style={[styles.chipText, !activeGroup && styles.chipTextActive]}>Todos</Text>
@@ -165,6 +166,7 @@ export default function FoodsScreen() {
               onPress={() => setActiveGroup((prev) => (prev === g ? null : g))}
               accessibilityRole="radio"
               accessibilityState={{ selected: activeGroup === g }}
+              aria-selected={activeGroup === g}
               accessibilityLabel={g}
             >
               <Text style={[styles.chipText, activeGroup === g && styles.chipTextActive]}>{g}</Text>
@@ -239,7 +241,13 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
 
-  chipsWrapper: { marginTop: 12 },
+  chipsWrapper: {
+    marginTop: 12,
+    ...(Platform.OS === 'web' ? {
+      WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%)',
+      maskImage: 'linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%)',
+    } : null),
+  },
   chipsRow: { paddingHorizontal: 20, gap: 8 },
   chip: {
     paddingHorizontal: 14,

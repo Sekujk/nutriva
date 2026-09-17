@@ -4,7 +4,7 @@ import {
   View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, BackHandler, ScrollView,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ProfileProvider, useProfile } from './src/context/ProfileContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';

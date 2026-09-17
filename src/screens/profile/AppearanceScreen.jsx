@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../../theme/ThemeContext';
 import SubScreenHeader from './SubScreenHeader';
 
@@ -30,6 +30,7 @@ export default function AppearanceScreen({ onBack }) {
                 onPress={() => setThemeMode(m.key)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: active }}
+                aria-selected={active}
                 accessibilityLabel={m.label}
               >
                 <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{m.label}</Text>
@@ -51,6 +52,7 @@ export default function AppearanceScreen({ onBack }) {
                 onPress={() => setThemePalette(key)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: active }}
+                aria-selected={active}
                 accessibilityLabel={p.label}
               >
                 <View style={[styles.swatch, { backgroundColor: p.swatch }, active && styles.swatchActive]}>

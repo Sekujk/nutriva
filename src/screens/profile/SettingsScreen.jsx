@@ -26,6 +26,7 @@ export default function SettingsScreen({ onBack }) {
                 onPress={() => setCountry(c.code)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: active }}
+                aria-selected={active}
                 accessibilityLabel={c.name}
               >
                 <CountryFlag code={c.code} size={16} style={styles.segmentFlag} />
