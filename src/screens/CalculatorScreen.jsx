@@ -553,8 +553,8 @@ export default function CalculatorScreen() {
       {idealWeightByImc !== null && idealWeightAnthro !== null && (
         <Text style={styles.idealWeightNote}>
           No son lo mismo: "por IMC" es el límite superior de lo normal (IMC 24.9), no un punto medio. El
-          antropométrico es la fórmula de referencia en la práctica clínica peruana — si difieren mucho, suele ser el
-          que se cita como peso ideal.
+          antropométrico es la fórmula de referencia antropométrica clásica — si difieren mucho, suele ser el que se
+          cita como peso ideal.
         </Text>
       )}
       {showsAdjustedWeight && (
