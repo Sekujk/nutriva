@@ -10,6 +10,7 @@ import HeroBadge from '../../components/HeroBadge';
 
 const GITHUB_URL = 'https://github.com/Sekujk/nutriva';
 const RELEASES_URL = 'https://github.com/Sekujk/nutriva/releases';
+const PORTFOLIO_URL = 'https://portafolioseclen.dev';
 
 export default function AboutScreen({ onBack }) {
   const { colors } = useTheme();
@@ -44,6 +45,26 @@ export default function AboutScreen({ onBack }) {
           el código está abierto en GitHub.
         </Text>
       </View>
+
+      <Hoverable scaleTo={1.01}>
+        {({ hovered }) => (
+          <TouchableOpacity
+            style={[styles.row, hovered && styles.rowHovered]}
+            onPress={() => Linking.openURL(PORTFOLIO_URL)}
+            accessibilityRole="link"
+            accessibilityLabel="Ver el portafolio de quien hizo esta app"
+          >
+            <View style={styles.rowIcon}>
+              <Ionicons name="person-outline" size={19} color={colors.primary} />
+            </View>
+            <View style={styles.rowTextCol}>
+              <Text style={styles.rowLabel}>Hecho por Sekujk</Text>
+              <Text style={styles.rowBody}>portafolioseclen.dev</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={colors.textFaint} />
+          </TouchableOpacity>
+        )}
+      </Hoverable>
 
       <Hoverable scaleTo={1.01}>
         {({ hovered }) => (
