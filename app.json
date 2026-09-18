@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Nutriva",
+    "slug": "Nutriva",
+    "version": "1.0.3",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#5c8d72",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sekujk.nutriva"
+    },
+    "android": {
+      "package": "com.sekujk.nutriva",
+      "icon": "./assets/icon.png"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/icon.png",
+      "name": "Nutriva",
+      "shortName": "Nutriva",
+      "themeColor": "#5c8d72",
+      "backgroundColor": "#5c8d72",
+      "display": "standalone"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nutriva necesita acceso a tus fotos para que puedas elegir una foto de perfil."
+        }
+      ]
+    ],
+    "owner": "sekujk",
+    "extra": {
+      "eas": {
+        "projectId": "cbecf885-94fc-427e-858d-e3026e2290bc"
+      }
+    }
+  }
+}

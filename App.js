@@ -1,0 +1,475 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import {
+  View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, BackHandler, ScrollView,
+} from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ProfileProvider, useProfile } from './src/context/ProfileContext';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { CountryProvider } from './src/context/CountryContext';
+import { AppAlertProvider } from './src/context/AppAlertContext';
+import { TourProvider, useTourTarget } from './src/context/TourContext';
+import TourOverlay from './src/components/TourOverlay';
+import { hapticSelection } from './src/utils/haptics';
+import AuthScreen from './src/screens/AuthScreen';
+import OnboardingFlow from './src/screens/onboarding/OnboardingFlow';
+import HomeScreen from './src/screens/HomeScreen';
+import CalculatorScreen from './src/screens/CalculatorScreen';
+import FoodsScreen from './src/screens/FoodsScreen';
+import HistoryScreen from './src/screens/HistoryScreen';
+import FriendsArea from './src/screens/social/FriendsArea';
+import ProfileArea from './src/screens/profile/ProfileArea';
+import Hoverable from './src/components/Hoverable';
+import HeroBadge from './src/components/HeroBadge';
+import Avatar from './src/components/Avatar';
+import useResponsive from './src/hooks/useResponsive';
+import { useAppFonts, FONT_DISPLAY } from './src/theme/typography';
+
+const TABS = [
+  { id: 'home', label: 'Inicio', icon: 'home', Component: HomeScreen },
+  { id: 'calculator', label: 'Calculadora', icon: 'calculator', Component: CalculatorScreen },
+  { id: 'foods', label: 'Alimentos', icon: 'restaurant', Component: FoodsScreen },
+  { id: 'history', label: 'Historial', icon: 'time', Component: HistoryScreen },
+  { id: 'friends', label: 'Amigos', icon: 'people', Component: FriendsArea },
+];
+
+const PROFILE_SCREEN = { id: 'profile', label: 'Perfil', icon: 'person-circle', Component: ProfileArea };
+
+const ALL_SCREENS = [...TABS, PROFILE_SCREEN];
+
+function useActiveTabAnimation(activeTab) {
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    fadeAnim.setValue(0);
+    slideAnim.setValue(14);
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
+    ]).start();
+  }, [activeTab]);
+
+  return { fadeAnim, slideAnim };
+}
+
+function DesktopShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl }) {
+  const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
+  const navRef = useTourTarget('nav-bar');
+  const profileRef = useTourTarget('profile-avatar');
+
+  return (
+    <View style={styles.desktopRoot}>
+      <View style={styles.sidebar}>
+        <View style={styles.sidebarBrand}>
+          <HeroBadge emoji="🦦" size={38} iconSize={18} />
+          <Text style={styles.sidebarBrandText}>Nutriva</Text>
+        </View>
+
+        <View style={styles.sidebarNav} ref={navRef}>
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <Hoverable key={tab.id} scaleTo={1} pressScaleTo={0.97}>
+                {({ hovered, pressHandlers }) => (
+                  <TouchableOpacity
+                    style={[styles.sidebarItem, active && styles.sidebarItemActive, !active && hovered && styles.sidebarItemHovered]}
+                    onPress={() => { hapticSelection(); setActiveTab(tab.id); }}
+                    {...pressHandlers}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={tab.label}
+                  >
+                    <Ionicons
+                      name={active ? tab.icon : `${tab.icon}-outline`}
+                      size={20}
+                      color={active ? colors.primary : colors.textMuted}
+                    />
+                    <Text style={[styles.sidebarItemText, active && styles.sidebarItemTextActive]}>{tab.label}</Text>
+                  </TouchableOpacity>
+                )}
+              </Hoverable>
+            );
+          })}
+        </View>
+
+        <Hoverable scaleTo={1} pressScaleTo={0.97}>
+          {({ hovered, pressHandlers }) => (
+            <TouchableOpacity
+              ref={profileRef}
+              style={[styles.sidebarProfile, activeTab === 'profile' && styles.sidebarItemActive, activeTab !== 'profile' && hovered && styles.sidebarItemHovered]}
+              onPress={() => { hapticSelection(); setActiveTab('profile'); }}
+              {...pressHandlers}
+              accessibilityRole="button"
+              accessibilityLabel="Perfil"
+            >
+              <Avatar
+                uri={avatarUrl}
+                label={(username[0] || email[0] || '?').toUpperCase()}
+                size={34}
+                fontSize={14}
+                borderWidth={1.5}
+              />
+              <View style={styles.sidebarProfileTextCol}>
+                <Text style={styles.sidebarProfileName} numberOfLines={1}>{username || 'Perfil'}</Text>
+                {!!username && <Text style={styles.sidebarProfileEmail} numberOfLines={1}>{email}</Text>}
+              </View>
+            </TouchableOpacity>
+          )}
+        </Hoverable>
+      </View>
+
+      <View style={styles.desktopMain}>
+        <View style={styles.desktopHeader}>
+          <View style={styles.desktopHeaderBadge}>
+            <Ionicons name={activeTabInfo.icon} size={20} color={colors.primary} />
+          </View>
+          <Text style={styles.desktopHeaderTitle}>{activeTabInfo.label}</Text>
+        </View>
+
+        {activeTab === 'friends' ? (
+          <View style={styles.desktopContentFlexWrap}>
+            <Animated.View
+              style={[
+                styles.desktopContentInner,
+                styles.desktopContentInnerFlex,
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+              ]}
+            >
+              <ActiveComponent onNavigate={setActiveTab} />
+            </Animated.View>
+          </View>
+        ) : (
+          <ScrollView style={styles.desktopContentScroll} contentContainerStyle={styles.desktopContentScrollInner}>
+            <Animated.View
+              style={[
+                styles.desktopContentInner,
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+              ]}
+            >
+              <ActiveComponent onNavigate={setActiveTab} />
+            </Animated.View>
+          </ScrollView>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function MobileShell({ activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl }) {
+  const { fadeAnim, slideAnim } = useActiveTabAnimation(activeTab);
+  const onProfile = activeTab === 'profile';
+  const navRef = useTourTarget('nav-bar');
+  const profileRef = useTourTarget('profile-avatar');
+
+  return (
+    <SafeAreaView style={styles.flex}>
+      <View style={styles.hero}>
+        <Animated.View style={[styles.heroLeft, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <HeroBadge icon={activeTabInfo.icon} size={32} iconSize={16} />
+          <Text style={styles.heroTitle}>{activeTabInfo.label}</Text>
+        </Animated.View>
+
+        <Hoverable scaleTo={1.08} pressScaleTo={0.92}>
+          {({ pressHandlers }) => (
+            <TouchableOpacity
+              ref={profileRef}
+              style={[styles.profileCircle, onProfile && styles.profileCircleActive]}
+              onPress={() => { hapticSelection(); setActiveTab('profile'); }}
+              {...pressHandlers}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Perfil"
+            >
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.profileImage} />
+              ) : (
+                <Text style={[styles.profileInitial, onProfile && styles.profileInitialActive]}>
+                  {(username[0] || email[0] || '?').toUpperCase()}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </Hoverable>
+      </View>
+
+      <View style={styles.card}>
+        <Animated.View style={[styles.cardContent, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <ActiveComponent onNavigate={setActiveTab} />
+        </Animated.View>
+      </View>
+
+      <View style={styles.tabBar} ref={navRef}>
+        {TABS.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <Hoverable key={tab.id} scaleTo={1.06} pressScaleTo={0.93} style={styles.tabButtonWrapper}>
+              {({ hovered, pressHandlers }) => (
+                <TouchableOpacity
+                  style={[styles.tabButton, active && styles.tabButtonActive, !active && hovered && styles.tabButtonHovered]}
+                  onPress={() => { hapticSelection(); setActiveTab(tab.id); }}
+                  {...pressHandlers}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={tab.label}
+                >
+                  <Ionicons
+                    name={active ? tab.icon : `${tab.icon}-outline`}
+                    size={22}
+                    color={active || hovered ? colors.primary : colors.textMuted}
+                  />
+                  <Text style={[styles.tabLabel, (active || hovered) && styles.tabLabelActive]} numberOfLines={1}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </Hoverable>
+          );
+        })}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function MainApp() {
+  const { session } = useAuth();
+  const { profile } = useProfile();
+  const { colors } = useTheme();
+  const { isDesktop } = useResponsive();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+  const [activeTab, setActiveTab] = useState('home');
+
+  const activeTabInfo = ALL_SCREENS.find((tab) => tab.id === activeTab);
+  const ActiveComponent = activeTabInfo.Component;
+
+  const email = session?.user?.email || '';
+  const username = profile?.username || '';
+  const avatarUrl = profile?.avatar_url || null;
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return true;
+      }
+      return false;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [activeTab]);
+
+  const sharedProps = { activeTab, setActiveTab, activeTabInfo, ActiveComponent, colors, styles, username, email, avatarUrl };
+
+  return isDesktop ? <DesktopShell {...sharedProps} /> : <MobileShell {...sharedProps} />;
+}
+
+function Root() {
+  const { session, isLoading } = useAuth();
+  const { profile, profileLoaded } = useProfile();
+  const { colors } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+  const fontsLoaded = useAppFonts();
+
+  if (isLoading || !profileLoaded || !fontsLoaded) {
+    return <AppLoader colors={colors} styles={styles} />;
+  }
+
+  if (!session) {
+    return <AuthScreen />;
+  }
+
+  const needsOnboarding = profile?.onboarding_complete !== true;
+  return needsOnboarding ? <OnboardingFlow /> : <MainApp />;
+}
+
+function AppLoader({ colors, styles }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] });
+  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] });
+
+  return (
+    <View style={styles.loaderRoot}>
+      <Animated.View style={{ transform: [{ scale }], opacity }}>
+        <HeroBadge emoji="🦦" size={64} iconSize={30} />
+      </Animated.View>
+      <Text style={styles.loaderWordmark}>NUTRIVA</Text>
+      <ActivityIndicator color={colors.primary} />
+    </View>
+  );
+}
+
+function ThemedStatusBar() {
+  return <StatusBar style="light" />;
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <ProfileProvider>
+          <ThemeProvider>
+            <AppAlertProvider>
+              <CountryProvider>
+                <TourProvider>
+                  <ThemedStatusBar />
+                  <Root />
+                  <TourOverlay />
+                </TourProvider>
+              </CountryProvider>
+            </AppAlertProvider>
+          </ThemeProvider>
+        </ProfileProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
+}
+
+const getStyles = (colors) => StyleSheet.create({
+  flex: { flex: 1, backgroundColor: colors.background },
+  loaderRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, gap: 16 },
+  loaderWordmark: { fontSize: 19, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: 3 },
+
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  heroTitle: { fontSize: 17, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: -0.2 },
+
+  profileCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  profileCircleActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  profileInitial: { fontSize: 13, fontWeight: '800', color: colors.textMuted },
+  profileInitialActive: { color: colors.primary },
+  profileImage: { width: 31, height: 31, borderRadius: 15.5 },
+
+  card: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  cardContent: { flex: 1 },
+
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    marginHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 10,
+    borderRadius: 20,
+    padding: 6,
+    gap: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  tabButtonWrapper: { flex: 1 },
+  tabButton: { minHeight: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 3, paddingHorizontal: 2 },
+  tabButtonActive: { backgroundColor: colors.primarySoft },
+  tabButtonHovered: { backgroundColor: colors.surfaceMuted },
+  tabLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
+  tabLabelActive: { color: colors.primary },
+
+  // Desktop shell
+  desktopRoot: { flex: 1, flexDirection: 'row', backgroundColor: colors.background },
+  sidebar: {
+    width: 264,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingVertical: 24,
+    paddingHorizontal: 18,
+    justifyContent: 'flex-start',
+  },
+  sidebarBrand: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 32, paddingHorizontal: 6 },
+  sidebarBrandText: { fontSize: 20, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: -0.2 },
+  sidebarNav: { gap: 4, flex: 1 },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 46,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  sidebarItemActive: { backgroundColor: colors.primarySoft },
+  sidebarItemHovered: { backgroundColor: colors.surfaceMuted },
+  sidebarItemText: { fontSize: 14.5, fontWeight: '600', color: colors.textMuted },
+  sidebarItemTextActive: { color: colors.primary, fontWeight: '700' },
+  sidebarProfile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 56,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 16,
+  },
+  sidebarProfileTextCol: { flex: 1 },
+  sidebarProfileName: { fontSize: 13.5, fontWeight: '700', color: colors.text },
+  sidebarProfileEmail: { fontSize: 11, color: colors.textFaint, marginTop: 1 },
+
+  desktopMain: { flex: 1 },
+  desktopHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 32,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  desktopHeaderBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  desktopHeaderTitle: { fontSize: 20, fontFamily: FONT_DISPLAY, color: colors.text, letterSpacing: -0.2 },
+  desktopContentScroll: { flex: 1 },
+  desktopContentScrollInner: { flexGrow: 1, alignItems: 'center' },
+  desktopContentInner: { width: '100%', maxWidth: 880, paddingHorizontal: 8 },
+  desktopContentFlexWrap: { flex: 1, alignItems: 'center' },
+  desktopContentInnerFlex: { flex: 1 },
+});
