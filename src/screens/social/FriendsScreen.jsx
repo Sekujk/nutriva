@@ -79,10 +79,10 @@ export default function FriendsScreen({ onOpenGroups, onOpenChat }) {
         ? supabase.from('friend_profiles').select('*').in('id', otherIds(accepted))
         : Promise.resolve({ data: [] }),
       incomingPending.length
-        ? supabase.from('searchable_profiles').select('*').in('id', otherIds(incomingPending))
+        ? supabase.from('friend_profiles').select('*').in('id', otherIds(incomingPending))
         : Promise.resolve({ data: [] }),
       outgoingPending.length
-        ? supabase.from('searchable_profiles').select('*').in('id', otherIds(outgoingPending))
+        ? supabase.from('friend_profiles').select('*').in('id', otherIds(outgoingPending))
         : Promise.resolve({ data: [] }),
     ]);
 
@@ -113,12 +113,7 @@ export default function FriendsScreen({ onOpenGroups, onOpenChat }) {
     setSearching(true);
     const timeout = setTimeout(async () => {
       const { data } = await supabase
-        .from('searchable_profiles')
-        .select('*')
-        .ilike('username', tagMatch[1])
-        .eq('tag', tagMatch[2].toUpperCase())
-        .neq('id', myId)
-        .limit(1);
+        .rpc('find_profile_by_tag', { p_username: tagMatch[1], p_tag: tagMatch[2].toUpperCase() });
       if (!cancelled) {
         setResults(data || []);
         setSearching(false);

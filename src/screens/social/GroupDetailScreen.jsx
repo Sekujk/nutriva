@@ -79,7 +79,7 @@ export default function GroupDetailScreen({ groupId, groupName, onBack, onGroupD
       return;
     }
 
-    const { data: profiles } = await supabase.from('searchable_profiles').select('*').in('id', friendIds);
+    const { data: profiles } = await supabase.from('friend_profiles').select('*').in('id', friendIds);
     setCandidates(profiles || []);
     setPickerOpen(true);
   };
