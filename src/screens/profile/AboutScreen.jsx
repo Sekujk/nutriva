@@ -10,7 +10,7 @@ import HeroBadge from '../../components/HeroBadge';
 
 const GITHUB_URL = 'https://github.com/Sekujk/nutriva';
 const RELEASES_URL = 'https://github.com/Sekujk/nutriva/releases';
-const PORTFOLIO_URL = 'https://portafolioseclen.dev';
+const PORTFOLIO_URL = 'https://sekujk.me';
 
 export default function AboutScreen({ onBack }) {
   const { colors } = useTheme();
@@ -59,7 +59,7 @@ export default function AboutScreen({ onBack }) {
             </View>
             <View style={styles.rowTextCol}>
               <Text style={styles.rowLabel}>Hecho por Sekujk</Text>
-              <Text style={styles.rowBody}>portafolioseclen.dev</Text>
+              <Text style={styles.rowBody}>sekujk.me</Text>
             </View>
             <Ionicons name="open-outline" size={18} color={colors.textFaint} />
           </TouchableOpacity>
