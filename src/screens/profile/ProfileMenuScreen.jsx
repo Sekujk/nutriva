@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, ActivityIndicator, Linking } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
@@ -12,6 +12,7 @@ import Avatar from '../../components/Avatar';
 import TermsModal from '../../components/TermsModal';
 import { darken, lighten } from '../../utils/color';
 import { FONT_DISPLAY, FONT_DISPLAY_ITALIC } from '../../theme/typography';
+import { PRIVACY_POLICY_URL } from '../../config/legal';
 
 const MENU_MONTHS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -35,6 +36,7 @@ const MENU_SECTIONS = [
       { key: 'sugerencias', icon: 'bulb-outline', label: 'Sugerencias', body: 'Cuéntanos qué falta o qué mejorar' },
       { key: 'sobre', icon: 'sparkles-outline', label: 'Sobre la app', body: 'Versión, código y agradecimientos' },
       { key: 'terminos', icon: 'document-text-outline', label: 'Términos y condiciones', body: 'Tu cuenta, tus datos y cómo funciona Nutriva' },
+      { key: 'privacidad', icon: 'shield-checkmark-outline', label: 'Política de Privacidad', body: 'Qué datos guardamos y cómo pedir que los borren' },
     ],
   },
 ];
@@ -107,6 +109,10 @@ export default function ProfileMenuScreen({ onNavigate, onNavigateApp }) {
   const handleMenuPress = (item) => {
     if (item.key === 'terminos') {
       setTermsVisible(true);
+      return;
+    }
+    if (item.key === 'privacidad') {
+      Linking.openURL(PRIVACY_POLICY_URL);
       return;
     }
     if (item.key === 'tour') {

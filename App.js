@@ -26,6 +26,8 @@ import HeroBadge from './src/components/HeroBadge';
 import Avatar from './src/components/Avatar';
 import useResponsive from './src/hooks/useResponsive';
 import { useAppFonts, FONT_DISPLAY } from './src/theme/typography';
+import TermsModal from './src/components/TermsModal';
+import { TERMS_VERSION } from './src/config/legal';
 
 const TABS = [
   { id: 'home', label: 'Inicio', icon: 'home', Component: HomeScreen },
@@ -272,7 +274,7 @@ function MainApp() {
 
 function Root() {
   const { session, isLoading } = useAuth();
-  const { profile, profileLoaded } = useProfile();
+  const { profile, profileLoaded, updateProfile } = useProfile();
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const fontsLoaded = useAppFonts();
@@ -283,6 +285,21 @@ function Root() {
 
   if (!session) {
     return <AuthScreen />;
+  }
+
+  // Si el usuario acepto una version vieja de los terminos (o nunca quedo
+  // registrada, de antes de que existiera esta columna), lo bloqueamos acá
+  // hasta que los vuelva a aceptar - no importa en que pantalla estuviera.
+  const needsTermsReaccept = !!profile && profile.terms_version !== TERMS_VERSION;
+  if (needsTermsReaccept) {
+    return (
+      <TermsModal
+        visible
+        required
+        doneLabel="Acepto y continúo"
+        onClose={() => updateProfile({ terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() })}
+      />
+    );
   }
 
   const needsOnboarding = profile?.onboarding_complete !== true;

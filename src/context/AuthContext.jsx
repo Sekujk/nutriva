@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../config/supabase';
+import { TERMS_VERSION } from '../config/legal';
 
 const AuthContext = createContext();
 
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { captchaToken, data: { study_opt_in: !!studyOptIn } },
+      options: { captchaToken, data: { study_opt_in: !!studyOptIn, terms_version: TERMS_VERSION } },
     });
     if (error) throw error;
     return { requiresEmailConfirmation: !data.session };
