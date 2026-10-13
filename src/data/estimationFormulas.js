@@ -44,7 +44,7 @@ export const LIMB_PERCENTAGES = [
 
 // weightKnown: si es el peso ACTUAL de un amputado (para saber su peso
 // "completo" previo, se suma), o si es el peso previo/ideal (para saber
-// cuanto pesaria ya sin la extremidad, se resta) -- direction indica cual.
+// cuanto pesaria ya sin la extremidad, se resta): direction indica cual.
 export const computeLimbAdjustment = (weightKg, limbPercent, direction = 'add') => {
   const amount = (weightKg * limbPercent) / 100;
   return direction === 'add' ? weightKg + amount : weightKg - amount;

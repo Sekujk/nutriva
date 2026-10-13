@@ -1,5 +1,5 @@
 // Fuente: Instituto Nacional de Salud (INS) del Perú, Centro Nacional de Alimentación,
-// Nutrición y Vida Saludable — "Tablas Peruanas de Composición de Alimentos", 11ª edición
+// Nutrición y Vida Saludable, "Tablas Peruanas de Composición de Alimentos", 11ª edición
 // digital (marzo 2025), que reporta datos recolectados hasta 2023. Cubre 1125 alimentos
 // más 567 preparaciones. Valores por 100 g de alimento, verificados directamente contra
 // el PDF oficial: https://repositorio.ins.gob.pe/bitstreams/6cc030c5-daf4-4f19-9357-6910343796d9/download

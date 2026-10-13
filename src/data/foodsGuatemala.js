@@ -1,4 +1,4 @@
-// Fuente: INCAP (Instituto de Nutrición de Centro América y Panamá) — "Tabla de
+// Fuente: INCAP (Instituto de Nutrición de Centro América y Panamá): "Tabla de
 // Composición de Alimentos de Centroamérica", 2da edición (2007, reimpresión 2012).
 // Valores por 100 g de porción comestible. Subconjunto curado a mano.
 //
