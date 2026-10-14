@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import { useTheme } from '../../theme/ThemeContext';
@@ -9,7 +9,6 @@ import Hoverable from '../../components/Hoverable';
 import HeroBadge from '../../components/HeroBadge';
 
 const GITHUB_URL = 'https://github.com/Sekujk/nutriva';
-const RELEASES_URL = 'https://github.com/Sekujk/nutriva/releases';
 const PORTFOLIO_URL = 'https://sekujk.me';
 
 export default function AboutScreen({ onBack }) {
@@ -85,28 +84,6 @@ export default function AboutScreen({ onBack }) {
           </TouchableOpacity>
         )}
       </Hoverable>
-
-      {Platform.OS === 'web' ? null : (
-        <Hoverable scaleTo={1.01}>
-          {({ hovered }) => (
-            <TouchableOpacity
-              style={[styles.row, hovered && styles.rowHovered]}
-              onPress={() => Linking.openURL(RELEASES_URL)}
-              accessibilityRole="link"
-              accessibilityLabel="Buscar actualizaciones"
-            >
-              <View style={styles.rowIcon}>
-                <Ionicons name="refresh-outline" size={19} color={colors.primary} />
-              </View>
-              <View style={styles.rowTextCol}>
-                <Text style={styles.rowLabel}>Buscar actualizaciones</Text>
-                <Text style={styles.rowBody}>Esta versión no se actualiza sola, revisa GitHub de vez en cuando</Text>
-              </View>
-              <Ionicons name="open-outline" size={18} color={colors.textFaint} />
-            </TouchableOpacity>
-          )}
-        </Hoverable>
-      )}
 
       <View style={styles.thanksCard}>
         <Text style={styles.thanksTitle}>Con cariño</Text>
